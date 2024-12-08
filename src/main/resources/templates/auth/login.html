@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <title>Login - Agua Deliciosa</title>
+    <link rel="stylesheet" th:href="@{/dist/css/adminlte.css}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.min.css">
+</head>
+<body class="login-page bg-body-secondary">
+    <div class="login-box">
+        <div class="login-logo">
+            <a href="/"><b>Agua</b>Deliciosa</a>
+        </div>
+        <div class="card">
+            <div class="card-body login-card-body">
+                <p class="login-box-msg">Iniciar sesión</p>
+                
+                <div th:if="${error}" class="alert alert-danger">
+                    <p th:text="${error}">Error</p>
+                </div>
+                
+                <div th:if="${message}" class="alert alert-success">
+                    <p th:text="${message}">Message</p>
+                </div>
+                
+                <form th:action="@{/login}" method="post">
+                    <div class="input-group mb-3">
+                        <input type="text" name="username" class="form-control" placeholder="Usuario" required>
+                        <div class="input-group-text">
+                            <span class="bi bi-person"></span>
+                        </div>
+                    </div>
+                    <div class="input-group mb-3">
+                        <input type="password" name="password" class="form-control" placeholder="Contraseña" required>
+                        <div class="input-group-text">
+                            <span class="bi bi-lock"></span>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary btn-block">Ingresar</button>
+                        </div>
+                    </div>
+                </form>
+
+                <p class="mb-0 mt-3">
+                    <a th:href="@{/register}" class="text-center">Registrar nuevo usuario</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script th:src="@{/dist/js/adminlte.js}"></script>
+</body>
+</html> 
