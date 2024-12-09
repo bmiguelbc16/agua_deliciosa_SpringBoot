@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.ui.Model;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 
 @Controller
@@ -14,16 +15,18 @@ public class LoginController {
     @GetMapping("/login")
     public String showLoginForm(Model model, 
                                 @RequestParam(required = false) String error,
-                                @RequestParam(required = false) String logout) {
+                                @RequestParam(required = false) String logout,
+                                HttpServletRequest request) {
         
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         
         if (auth != null && auth.isAuthenticated() && !auth.getName().equals("anonymousUser")) {
-            return "redirect:/dashboard";
+            return "redirect:/";
         }
         
-        if (error != null) {
+        if (request.getSession().getAttribute("SPRING_SECURITY_LAST_EXCEPTION") != null) {
             model.addAttribute("error", "Credenciales inválidas. Por favor, intente nuevamente.");
+            request.getSession().removeAttribute("SPRING_SECURITY_LAST_EXCEPTION");
         }
         
         if (logout != null) {
