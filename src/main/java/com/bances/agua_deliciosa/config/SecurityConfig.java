@@ -7,45 +7,62 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import com.bances.agua_deliciosa.service.UserService;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import lombok.extern.slf4j.Slf4j;
+import lombok.RequiredArgsConstructor;
+import com.bances.agua_deliciosa.service.CustomUserDetailsService;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity(securedEnabled = true)
+@EnableMethodSecurity
+@RequiredArgsConstructor
 @Slf4j
 public class SecurityConfig {
+
+    private final CustomUserDetailsService userDetailsService;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/login", "/register", "/error", "/dist/**", "/assets/**").permitAll()
+                .requestMatchers("/dist/**", "/plugins/**", "/css/**", "/js/**").permitAll()
+                .requestMatchers("/", "/login", "/logout").permitAll()
                 .requestMatchers("/admin/**").hasRole("ADMIN")
-                .requestMatchers("/gerente/**").hasRole("GERENTE")
-                .requestMatchers("/vendedor/**").hasRole("VENDEDOR")
-                .requestMatchers("/repartidor/**").hasRole("REPARTIDOR")
-                .requestMatchers("/cliente/**").hasRole("CLIENTE")
+                .requestMatchers("/client/**").hasRole("CLIENTE")
                 .anyRequest().authenticated()
             )
             .formLogin(form -> form
                 .loginPage("/login")
                 .loginProcessingUrl("/login")
-                .defaultSuccessUrl("/dashboard")
+                .usernameParameter("email")
+                .passwordParameter("password")
+                .defaultSuccessUrl("/dashboard", true)
                 .failureUrl("/login?error=true")
                 .permitAll()
             )
             .logout(logout -> logout
-                .logoutSuccessUrl("/login?logout=true")
+                .logoutUrl("/logout")
+                .logoutSuccessUrl("/login")
+                .invalidateHttpSession(true)
+                .clearAuthentication(true)
                 .permitAll()
-            );
+            )
+            .userDetailsService(userDetailsService);
 
         return http.build();
+    }
+
+    @Bean
+    public AuthenticationProvider authenticationProvider() {
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+        provider.setUserDetailsService(userDetailsService);
+        provider.setPasswordEncoder(passwordEncoder());
+        return provider;
     }
 
     @Bean
@@ -56,13 +73,5 @@ public class SecurityConfig {
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
-    }
-
-    @Bean
-    public DaoAuthenticationProvider authenticationProvider(UserService userService) {
-        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-        authProvider.setUserDetailsService(userService);
-        authProvider.setPasswordEncoder(passwordEncoder());
-        return authProvider;
     }
 }

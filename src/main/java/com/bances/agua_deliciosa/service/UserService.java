@@ -11,8 +11,14 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.extern.slf4j.Slf4j;
+import java.time.LocalDateTime;
+import java.util.UUID;
+import org.apache.commons.codec.digest.DigestUtils;
 
 import java.util.stream.Collectors;
+
+import org.springframework.security.core.context.SecurityContextHolder;
+import java.util.Set;
 
 @Service
 @Transactional
@@ -25,44 +31,102 @@ public class UserService implements UserDetailsService {
     @Autowired
     private PasswordEncoder passwordEncoder;
     
+    @Autowired
+    private EmailService emailService;
+    
     @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        log.debug("Intentando autenticar usuario: {}", username);
+    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+        log.debug("Intentando autenticar usuario con email: {}", email);
         
-        User user = userRepository.findByUsername(username)
+        User user = userRepository.findByEmail(email)
             .orElseThrow(() -> {
-                log.error("Usuario no encontrado: {}", username);
-                return new UsernameNotFoundException("Usuario no encontrado: " + username);
+                log.error("Usuario no encontrado con email: {}", email);
+                return new UsernameNotFoundException("Usuario no encontrado con email: " + email);
             });
-            
-        log.debug("Usuario encontrado: {}", username);
-        log.debug("Password hash en BD: {}", user.getPassword());
+        
+        log.debug("Usuario encontrado: {}", user.getEmail());
+        log.debug("Password hash en DB: {}", user.getPassword());
         log.debug("Roles del usuario: {}", user.getRoles());
-            
+        
+        Set<SimpleGrantedAuthority> authorities = user.getRoles().stream()
+            .map(role -> {
+                String authority = role.getName();
+                log.debug("Agregando rol: {}", authority);
+                return new SimpleGrantedAuthority(authority);
+            })
+            .collect(Collectors.toSet());
+        
+        log.debug("Authorities finales: {}", authorities);
+        
         return new org.springframework.security.core.userdetails.User(
-            user.getUsername(),
+            user.getEmail(),
             user.getPassword(),
-            user.getRoles().stream()
-                .map(role -> new SimpleGrantedAuthority(role.getName()))
-                .collect(Collectors.toList())
+            user.isActive(),
+            true,
+            true,
+            true,
+            authorities
         );
     }
     
-    public User createUser(User user) {
-        log.info("Creando nuevo usuario: {}", user.getUsername());
-        if (userRepository.findByUsername(user.getUsername()).isPresent()) {
-            throw new RuntimeException("El usuario ya existe");
+    public User findByEmail(String email) {
+        return userRepository.findByEmail(email)
+            .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado"));
+    }
+    
+    public void sendPasswordResetEmail(String email) {
+        User user = findByEmail(email);
+        String token = UUID.randomUUID().toString();
+        user.setRememberToken(token);
+        userRepository.save(user);
+        emailService.sendPasswordResetEmail(email, token);
+    }
+    
+    public void verifyEmail(Long id, String hash) {
+        User user = userRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+            
+        if (!hash.equals(generateVerificationHash(user))) {
+            throw new RuntimeException("Hash inválido");
         }
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-        return userRepository.save(user);
+        
+        user.setEmailVerifiedAt(LocalDateTime.now());
+        userRepository.save(user);
     }
     
-    public User findByUsername(String username) {
-        return userRepository.findByUsername(username)
-            .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado: " + username));
+    private String generateVerificationHash(User user) {
+        return DigestUtils.sha256Hex(user.getEmail() + user.getId());
     }
     
-    public boolean verifyPassword(String rawPassword, String encodedPassword) {
-        return passwordEncoder.matches(rawPassword, encodedPassword);
+    public void resendVerificationEmail() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = findByEmail(email);
+        String hash = generateVerificationHash(user);
+        emailService.sendVerificationEmail(user.getEmail(), user.getId(), hash);
+    }
+    
+    public boolean confirmPassword(String email, String password) {
+        User user = findByEmail(email);
+        return passwordEncoder.matches(password, user.getPassword());
+    }
+    
+    public void sendResetLinkEmail(String email) {
+        User user = findByEmail(email);
+        String token = UUID.randomUUID().toString();
+        user.setRememberToken(token);
+        userRepository.save(user);
+        emailService.sendPasswordResetEmail(email, token);
+    }
+    
+    public boolean isValidResetToken(String token) {
+        return userRepository.findByRememberToken(token).isPresent();
+    }
+    
+    public void resetPassword(String token, String email, String password) {
+        User user = userRepository.findByRememberToken(token)
+            .orElseThrow(() -> new RuntimeException("Token inválido"));
+        user.setPassword(passwordEncoder.encode(password));
+        user.setRememberToken(null);
+        userRepository.save(user);
     }
 } 
