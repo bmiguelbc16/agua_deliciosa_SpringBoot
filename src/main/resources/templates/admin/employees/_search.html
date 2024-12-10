@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+    <form th:fragment="search" id="search" th:action="@{/admin/seguridad/trabajadores}" method="get">
+        <div class="row">
+            <div class="col-12 col-md-6">
+                <div class="mb-3">
+                    <label class="form-label">Nombre:</label>
+                    <input type="text" name="search" class="form-control" 
+                            placeholder="Buscar por nombre o apellido"
+                            th:value="${param.search}">
+                </div>
+            </div>
+            <div class="col-auto d-flex align-items-end">
+                <div class="mb-3">
+                    <button type="submit" class="btn btn-primary">Buscar</button>
+                </div>
+            </div>
+        </div>
+    </form>
+</body>
+</html> 

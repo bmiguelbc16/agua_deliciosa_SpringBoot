@@ -1,17 +1,29 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org"
+    th:replace="~{admin/layout/main :: layout(~{::title}, ~{::section}, ~{::link}, ~{::script})}">
 <head>
     <title>Dashboard Cliente</title>
-    <link rel="stylesheet" th:href="@{/dist/css/adminlte.css}">
+    <link rel="stylesheet" th:href="@{/plugins/chart.js/Chart.min.css}">
 </head>
 <body>
-    <div class="container mt-5">
-        <h1>Dashboard de Cliente</h1>
-        <p>Bienvenido a tu panel de cliente</p>
-        
-        <div class="mt-3">
-            <a th:href="@{/logout}" class="btn btn-danger">Cerrar Sesión</a>
+    <section>
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Bienvenido a tu Panel de Cliente</h5>
+                            <p class="card-text">Aquí podrás gestionar tus pedidos y ver tu historial de compras.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Aquí puedes agregar más contenido específico para el cliente -->
+            
         </div>
-    </div>
+    </section>
+
+    <script th:src="@{/plugins/chart.js/Chart.min.js}"></script>
 </body>
 </html> 

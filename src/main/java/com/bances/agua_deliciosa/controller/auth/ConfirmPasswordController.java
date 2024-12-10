@@ -6,6 +6,8 @@ import org.springframework.ui.Model;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.bances.agua_deliciosa.service.UserService;
 import com.bances.agua_deliciosa.controller.BaseController;
+
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.security.core.Authentication;
 
@@ -17,11 +19,11 @@ public class ConfirmPasswordController extends BaseController {
     private UserService userService;
     
     @GetMapping("/confirm")
-    public String showConfirmForm(Model model) {
-        addCommonAttributes(model);
+    public String showConfirmForm(Model model, HttpServletRequest request) {
+        addCommonAttributes(model, request);
         return "auth/passwords/confirm";
     }
-    
+        
     @PostMapping("/confirm")
     public String confirm(@Valid @RequestParam String password, 
                             Authentication auth,

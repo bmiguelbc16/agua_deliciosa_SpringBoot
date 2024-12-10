@@ -8,8 +8,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
-import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.bances.agua_deliciosa.dto.EmployeeDTO;
 import com.bances.agua_deliciosa.service.EmployeeService;
@@ -19,8 +20,7 @@ import com.bances.agua_deliciosa.model.Employee;
 import java.util.Map;
 
 @Controller
-@RequestMapping("/admin/employees")
-@Slf4j
+@RequestMapping("/admin/seguridad/trabajadores")
 public class EmployeeController extends AdminController {
     
     @Autowired
@@ -31,67 +31,105 @@ public class EmployeeController extends AdminController {
     
     @GetMapping
     public String index(Model model, 
-                        @RequestParam(required = false) String search,
-                        @RequestParam(defaultValue = "0") int page) {
+                    HttpServletRequest request,
+                    @RequestParam(required = false) String search,
+                    @RequestParam(defaultValue = "0") int page) {
         Page<Employee> employees = employeeService.findAll(search, PageRequest.of(page, 10));
         model.addAttribute("employees", employees);
+        addCommonAttributes(model, request);
         return "admin/employees/index";
     }
     
     @GetMapping("/create")
-    public String create(Model model) {
-        model.addAttribute("employee", new EmployeeDTO());
-        model.addAttribute("genderOptions", Employee.OPTIONS_GENDER);
+    public String create(Model model, HttpServletRequest request) {
+        EmployeeDTO employeeDTO = new EmployeeDTO();
+        employeeDTO.setActive(true); // Valor por defecto
+        
+        model.addAttribute("employee", employeeDTO);
         model.addAttribute("roles", roleService.getAvailableRoles());
+        addCommonAttributes(model, request);
         return "admin/employees/create";
     }
     
     @PostMapping
     public String store(@Valid @ModelAttribute("employee") EmployeeDTO employeeDTO,
                         BindingResult result,
-                        Model model) {
-        logAdminAction("Creating new employee");
-        
+                        Model model,
+                        HttpServletRequest request,
+                        RedirectAttributes redirectAttributes) {
+        // Validar que las contraseñas coincidan
+        if (!employeeDTO.getPassword().equals(employeeDTO.getConfirmPassword())) {
+            result.rejectValue("confirmPassword", "error.confirmPassword", "Las contraseñas no coinciden");
+        }
+
         if (result.hasErrors()) {
-            model.addAttribute("genderOptions", Employee.OPTIONS_GENDER);
+            model.addAttribute("roles", roleService.getAvailableRoles());
+            addCommonAttributes(model, request);
             return "admin/employees/create";
         }
         
         try {
             employeeService.create(employeeDTO);
-            return "redirect:/admin/employees?success=Empleado creado correctamente";
+            redirectAttributes.addFlashAttribute("success", "Empleado creado correctamente");
+            return "redirect:/admin/seguridad/trabajadores";
         } catch (Exception e) {
-            model.addAttribute("error", "Error al crear empleado: " + e.getMessage());
+            model.addAttribute("error", e.getMessage());
+            model.addAttribute("roles", roleService.getAvailableRoles());
+            addCommonAttributes(model, request);
             return "admin/employees/create";
         }
     }
     
     @GetMapping("/{id}/edit")
-    public String edit(@PathVariable Long id, Model model) {
+    public String edit(@PathVariable Long id, Model model, HttpServletRequest request) {
         Employee employee = employeeService.findById(id);
-        model.addAttribute("employee", employee);
-        model.addAttribute("genderOptions", Employee.OPTIONS_GENDER);
         
+        // Crear DTO con datos del empleado
+        EmployeeDTO employeeDTO = new EmployeeDTO();
+        employeeDTO.setName(employee.getUser().getName());
+        employeeDTO.setLastName(employee.getUser().getLastName());
+        employeeDTO.setDocumentNumber(employee.getUser().getDocumentNumber());
+        employeeDTO.setEmail(employee.getUser().getEmail());
+        employeeDTO.setPhoneNumber(employee.getUser().getPhoneNumber());
+        employeeDTO.setGender(employee.getUser().getGender());
+        employeeDTO.setBirthDate(employee.getUser().getBirthDate());
+        
+        // Obtener el rol actual sin el prefijo ROLE_
+        String currentRole = employee.getUser().getRoles().stream()
+            .findFirst()
+            .map(role -> role.getName().replace("ROLE_", ""))
+            .orElse("");
+        employeeDTO.setRole(currentRole);
+        employeeDTO.setActive(employee.getUser().isActive());
+        
+        model.addAttribute("employee", employeeDTO);
+        model.addAttribute("employeeId", id);
+        model.addAttribute("roles", roleService.getAvailableRoles());
+        addCommonAttributes(model, request);
         return "admin/employees/edit";
     }
     
-    @PutMapping("/{id}")
-    public String update(@PathVariable Long id,
+    @PostMapping("/{id}")
+    public String update(@PathVariable Long id, 
                         @Valid @ModelAttribute("employee") EmployeeDTO employeeDTO,
                         BindingResult result,
-                        Model model) {
-        logAdminAction("Updating employee");
-        
+                        Model model,
+                        HttpServletRequest request,
+                        RedirectAttributes redirectAttributes) {
         if (result.hasErrors()) {
-            model.addAttribute("genderOptions", Employee.OPTIONS_GENDER);
+            model.addAttribute("roles", roleService.getAvailableRoles());
+            addCommonAttributes(model, request);
             return "admin/employees/edit";
         }
         
         try {
             employeeService.update(id, employeeDTO);
-            return "redirect:/admin/employees?success=Empleado actualizado correctamente";
+            redirectAttributes.addFlashAttribute("success", "Empleado actualizado correctamente");
+            return "redirect:/admin/seguridad/trabajadores";
         } catch (Exception e) {
-            model.addAttribute("error", "Error al actualizar empleado: " + e.getMessage());
+            model.addAttribute("error", e.getMessage());
+            model.addAttribute("roles", roleService.getAvailableRoles());
+            addCommonAttributes(model, request);
             return "admin/employees/edit";
         }
     }

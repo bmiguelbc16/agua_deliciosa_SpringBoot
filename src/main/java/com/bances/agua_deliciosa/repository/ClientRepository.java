@@ -15,4 +15,13 @@ public interface ClientRepository extends JpaRepository<Client, Long> {
         @Param("search") String search, 
         Pageable pageable
     );
+    
+    @Query("SELECT c FROM Client c JOIN c.user u WHERE u.email = :email")
+    Client findByUserEmail(@Param("email") String email);
+    
+    @Query("SELECT c FROM Client c JOIN c.user u WHERE u.documentNumber = :documentNumber")
+    Client findByUserDocumentNumber(@Param("documentNumber") String documentNumber);
+    
+    @Query("SELECT COUNT(c) FROM Client c WHERE c.user.active = true")
+    Long countActiveClients();
 } 

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+    th:replace="~{admin/layout/main :: layout(~{::title}, ~{::section}, ~{::link}, ~{::script})}">
+<head>
+    <title>Trabajadores</title>
+</head>
+<body>
+    <section>
+        <div class="row mb-4">
+            <div class="col">
+                <h3>Trabajadores</h3>
+            </div>
+            <div class="col text-right">
+                <a th:href="@{/admin/seguridad/trabajadores/create}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Nuevo Trabajador
+                </a>
+            </div>
+        </div>
+
+        <!-- Búsqueda -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <div th:replace="~{admin/employees/_search :: search}"></div>
+            </div>
+        </div>
+
+        <!-- Tabla de trabajadores -->
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>DNI</th>
+                                <th>Nombres</th>
+                                <th>Apellidos</th>
+                                <th>Email</th>
+                                <th>Teléfono</th>
+                                <th>Rol</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="employee : ${employees}">
+                                <td th:text="${employee.user.documentNumber}"></td>
+                                <td th:text="${employee.user.name}"></td>
+                                <td th:text="${employee.user.lastName}"></td>
+                                <td th:text="${employee.user.email}"></td>
+                                <td th:text="${employee.user.phoneNumber}"></td>
+                                <td>
+                                    <span th:each="role : ${employee.user.roles}" 
+                                          th:text="${#strings.replace(role.name, 'ROLE_', '')}">
+                                    </span>
+                                </td>
+                                <td>
+                                    <span th:if="${employee.user.active}" class="badge badge-success">Activo</span>
+                                    <span th:unless="${employee.user.active}" class="badge badge-danger">Inactivo</span>
+                                </td>
+                                <td>
+                                    <a th:href="@{/admin/seguridad/trabajadores/{id}/edit(id=${employee.id})}" 
+                                       class="btn btn-sm btn-info">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button type="button" 
+                                            class="btn btn-sm btn-danger"
+                                            th:onclick="'deleteEmployee(' + ${employee.id} + ')'">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr th:if="${employees.empty}">
+                                <td colspan="8" class="text-center">No hay trabajadores registrados</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Paginación -->
+                <div th:if="${employees.totalPages > 1}" class="d-flex justify-content-center mt-4">
+                    <nav>
+                        <ul class="pagination">
+                            <li class="page-item" th:classappend="${employees.first ? 'disabled' : ''}">
+                                <a class="page-link" 
+                                   th:href="@{/admin/seguridad/trabajadores(page=${employees.number - 1}, search=${param.search})}">&laquo;</a>
+                            </li>
+                            
+                            <li class="page-item" 
+                                th:each="pageNumber : ${#numbers.sequence(0, employees.totalPages - 1)}"
+                                th:classappend="${pageNumber == employees.number ? 'active' : ''}">
+                                <a class="page-link" 
+                                   th:href="@{/admin/seguridad/trabajadores(page=${pageNumber}, search=${param.search})}"
+                                   th:text="${pageNumber + 1}"></a>
+                            </li>
+                            
+                            <li class="page-item" th:classappend="${employees.last ? 'disabled' : ''}">
+                                <a class="page-link" 
+                                   th:href="@{/admin/seguridad/trabajadores(page=${employees.number + 1}, search=${param.search})}">&raquo;</a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Scripts específicos -->
+    <script th:inline="javascript">
+        function deleteEmployee(id) {
+            if (confirm('¿Está seguro de eliminar este trabajador?')) {
+                fetch(`/admin/seguridad/trabajadores/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="_csrf"]').content
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.reload();
+                    } else {
+                        alert(data.message || 'Error al eliminar el trabajador');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error al eliminar el trabajador');
+                });
+            }
+        }
+    </script>
+</body>
+</html> 

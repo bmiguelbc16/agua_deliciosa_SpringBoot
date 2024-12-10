@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" 
+    th:fragment="layout(title, content, links, scripts)">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title th:replace="${title}">Agua Deliciosa</title>
+    
+    <!-- Google Font: Source Sans Pro -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" th:href="@{/plugins/fontawesome-free/css/all.min.css}">
+    <!-- overlayScrollbars -->
+    <link rel="stylesheet" th:href="@{/plugins/overlayScrollbars/css/OverlayScrollbars.min.css}">
+    <!-- Theme style -->
+    <link rel="stylesheet" th:href="@{/dist/css/adminlte.min.css}">
+    <!-- Página específica CSS -->
+    <th:block th:replace="${links} ?: ~{}"></th:block>
+</head>
+<body class="hold-transition sidebar-mini layout-fixed">
+    <div class="wrapper">
+        <!-- Preloader -->
+        <div class="preloader flex-column justify-content-center align-items-center">
+            <img class="animation__shake" th:src="@{/dist/img/AdminLTELogo.png}" alt="AdminLTELogo" height="60" width="60">
+        </div>
+
+        <!-- Navbar -->
+        <nav th:replace="admin/fragments/navbar :: navbar"></nav>
+        
+        <!-- Main Sidebar Container -->
+        <aside th:replace="admin/fragments/sidebar :: sidebar"></aside>
+
+        <!-- Content Wrapper -->
+        <div class="content-wrapper">
+            <!-- Content Header -->
+
+
+            <!-- Main content -->
+            <section class="content">
+                <div class="container-fluid" th:replace="${content}">
+                    <!-- El contenido será reemplazado -->
+                </div>
+            </section>
+        </div>
+
+        <!-- Footer -->
+        <footer th:replace="admin/fragments/footer :: footer"></footer>
+
+        <!-- Control Sidebar -->
+        <aside class="control-sidebar control-sidebar-dark">
+            <!-- Control sidebar content goes here -->
+        </aside>
+    </div>
+
+    <!-- REQUIRED SCRIPTS -->
+    <!-- jQuery -->
+    <script th:src="@{/plugins/jquery/jquery.min.js}"></script>
+    <!-- Bootstrap -->
+    <script th:src="@{/plugins/bootstrap/js/bootstrap.bundle.min.js}"></script>
+    <!-- overlayScrollbars -->
+    <script th:src="@{/plugins/overlayScrollbars/js/jquery.overlayScrollbars.min.js}"></script>
+    <!-- AdminLTE App -->
+    <script th:src="@{/dist/js/adminlte.min.js}"></script>
+    <!-- Página específica JS -->
+    <th:block th:replace="${scripts} ?: ~{}"></th:block>
+
+    <!-- Al final del body, antes de cerrar -->
+    <script th:inline="javascript">
+        // Forzar recarga si la versión cambia
+        const currentVersion = /*[[${#dates.format(#dates.createNow(), 'yyyyMMddHHmmss')}]]*/ '';
+        const storedVersion = localStorage.getItem('appVersion');
+        
+        if (storedVersion !== currentVersion) {
+            localStorage.setItem('appVersion', currentVersion);
+            if (storedVersion) { // Solo recargar si ya existía una versión anterior
+                window.location.reload(true);
+            }
+        }
+    </script>
+
+    <!-- Justo antes de cerrar el body, después de los otros scripts -->
+    <script>
+        $(document).ready(function() {
+            // Obtener la URL actual
+            var currentUrl = window.location.pathname;
+            
+            // Activar el menú correspondiente
+            $('.nav-sidebar .nav-link').each(function() {
+                var linkUrl = $(this).attr('href');
+                if (linkUrl && currentUrl.startsWith(linkUrl)) {
+                    $(this).addClass('active');
+                    
+                    // Si está dentro de un submenú, expandir el menú padre
+                    var parentMenu = $(this).closest('.nav-treeview').prev('.nav-link');
+                    if (parentMenu.length) {
+                        parentMenu.addClass('active');
+                        $(this).closest('.nav-item').addClass('menu-open');
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html> 

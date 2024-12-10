@@ -4,6 +4,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.ui.Model;
 import lombok.extern.slf4j.Slf4j;
+import jakarta.servlet.http.HttpServletRequest;
 
 @Slf4j
 public abstract class BaseController {
@@ -11,7 +12,7 @@ public abstract class BaseController {
     /**
      * Agrega atributos comunes al modelo que serán necesarios en todas las vistas
      */
-    protected void addCommonAttributes(Model model) {
+    protected void addCommonAttributes(Model model, HttpServletRequest request) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.isAuthenticated()) {
             model.addAttribute("currentUser", auth.getName());
@@ -20,6 +21,7 @@ public abstract class BaseController {
                 .map(grantedAuthority -> grantedAuthority.getAuthority().replace("ROLE_", ""))
                 .orElse(""));
         }
+        model.addAttribute("currentUrl", request.getRequestURI());
     }
 
     /**

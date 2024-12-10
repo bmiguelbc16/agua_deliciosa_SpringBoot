@@ -9,6 +9,9 @@ import jakarta.annotation.PostConstruct;
 
 import com.bances.agua_deliciosa.service.DatabaseSeederService;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @SpringBootApplication
 @ComponentScan({"com.bances.agua_deliciosa.*"})
 public class AguaDeliciosaApplication {
@@ -22,7 +25,9 @@ public class AguaDeliciosaApplication {
 
 	@PostConstruct
     public void init() {
+        log.info("Iniciando la aplicación...");
         seederService.seedDatabase();
+        log.info("Base de datos inicializada correctamente");
     }
 }
 	

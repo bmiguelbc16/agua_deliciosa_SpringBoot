@@ -30,10 +30,11 @@ public class SecurityConfig {
         http
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/dist/**", "/plugins/**", "/css/**", "/js/**").permitAll()
-                .requestMatchers("/", "/login", "/logout").permitAll()
+                .requestMatchers("/dist/**", "/plugins/**", "/css/**", "/js/**", "/assets/**").permitAll()
+                .requestMatchers("/", "/login", "/logout", "/register").permitAll()
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .requestMatchers("/client/**").hasRole("CLIENTE")
+                .requestMatchers("/admin/seguridad/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
             )
             .formLogin(form -> form
@@ -42,14 +43,18 @@ public class SecurityConfig {
                 .usernameParameter("email")
                 .passwordParameter("password")
                 .defaultSuccessUrl("/dashboard", true)
-                .failureUrl("/login")
+                .failureUrl("/login?error")
                 .permitAll()
             )
             .logout(logout -> logout
                 .logoutUrl("/logout")
-                .logoutSuccessUrl("/login")
+                .logoutSuccessHandler((request, response, authentication) -> {
+                    request.getSession().setAttribute("showLogoutMessage", true);
+                    response.sendRedirect("/login");
+                })
                 .invalidateHttpSession(true)
                 .clearAuthentication(true)
+                .deleteCookies("JSESSIONID")
                 .permitAll()
             )
             .userDetailsService(userDetailsService);

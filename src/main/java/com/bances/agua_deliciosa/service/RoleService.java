@@ -16,10 +16,13 @@ public class RoleService {
     public List<Map<String, String>> getAvailableRoles() {
         return roleRepository.findAll().stream()
             .filter(role -> !role.getName().equals("ROLE_CLIENTE"))
-            .map(role -> Map.of(
-                "value", role.getName(),
-                "label", role.getName().replace("ROLE_", "")
-            ))
+            .map(role -> {
+                String roleName = role.getName().replace("ROLE_", "");
+                return Map.of(
+                    "value", roleName,
+                    "label", roleName
+                );
+            })
             .collect(Collectors.toList());
     }
 } 

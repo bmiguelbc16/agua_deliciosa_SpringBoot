@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+    <form th:fragment="form" 
+            th:action="@{${employeeId != null ? '/admin/seguridad/trabajadores/' + employeeId : '/admin/seguridad/trabajadores'}}"
+            method="post" 
+            class="form-employee" 
+            id="form-employee">
+        
+        <!-- Si es edición, agregar campo hidden para PUT -->
+        <input type="hidden" name="_method" value="put" th:if="${employeeId != null}">
+
+        <div class="card mb-4">
+            <div class="card-body">
+                <h6 class="card-title">Datos generales</h6>
+                <div class="row">
+                    <!-- DNI -->
+                    <div class="col-sm-3">
+                        <div class="mb-3">
+                            <label class="form-label">N° de documento</label>
+                            <input type="text" name="documentNumber" class="form-control"
+                                    placeholder="N° de documento" required maxlength="8"
+                                    th:value="${employee.documentNumber}">
+                        </div>
+                    </div>
+
+                    <!-- Nombres -->
+                    <div class="col-sm-3">
+                        <div class="mb-3">
+                            <label class="form-label">Nombres</label>
+                            <input type="text" name="name" class="form-control" 
+                                    placeholder="Nombres" required
+                                    th:value="${employee.name}">
+                        </div>
+                    </div>
+
+                    <!-- Apellidos -->
+                    <div class="col-sm-3">
+                        <div class="mb-3">
+                            <label class="form-label">Apellidos</label>
+                            <input type="text" name="lastName" class="form-control" 
+                                    placeholder="Apellidos" required
+                                    th:value="${employee.lastName}">
+                        </div>
+                    </div>
+
+                    <!-- Género -->
+                    <div class="col-sm-3">
+                        <div class="mb-3">
+                            <label class="form-label">Género</label>
+                            <select name="gender" class="form-control" required>
+                                <option value="">Seleccione género</option>
+                                <option value="M" th:selected="${employee.gender == 'M'}">Masculino</option>
+                                <option value="F" th:selected="${employee.gender == 'F'}">Femenino</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <!-- Fecha de Nacimiento -->
+                    <div class="col-sm-3">
+                        <div class="mb-3">
+                            <label class="form-label">Fecha de nacimiento</label>
+                            <input type="date" name="birthDate" class="form-control" required
+                                    th:value="${employee.birthDate}">
+                        </div>
+                    </div>
+
+                    <!-- Email -->
+                    <div class="col-sm-3">
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" name="email" class="form-control" 
+                                    placeholder="Email" required
+                                    th:value="${employee.email}">
+                        </div>
+                    </div>
+
+                    <!-- Teléfono -->
+                    <div class="col-sm-3">
+                        <div class="mb-3">
+                            <label class="form-label">Teléfono</label>
+                            <input type="text" name="phoneNumber" class="form-control" 
+                                    placeholder="Teléfono"
+                                    th:value="${employee.phoneNumber}">
+                        </div>
+                    </div>
+
+                    <!-- Rol -->
+                    <div class="col-sm-3">
+                        <div class="mb-3">
+                            <label class="form-label">Rol</label>
+                            <select name="role" class="form-control" required>
+                                <option value="">Seleccione rol</option>
+                                <option th:each="roleOption : ${roles}"
+                                        th:value="${roleOption.value}"
+                                        th:text="${roleOption.label}"
+                                        th:selected="${employee.role != null && employee.role == roleOption.value}">
+                                </option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contraseña y confirmación -->
+                <div class="row">
+                    <div class="col-sm-6">
+                        <div class="mb-3">
+                            <label class="form-label">
+                                Contraseña 
+                                <span th:if="${employeeId != null}" class="text-muted">(Dejar en blanco para mantener la actual)</span>
+                            </label>
+                            <input type="password" name="password" class="form-control" 
+                                    th:required="${employeeId == null}"
+                                    id="password">
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="mb-3">
+                            <label class="form-label">Confirmar Contraseña</label>
+                            <input type="password" name="confirmPassword" class="form-control" 
+                                    th:required="${employeeId == null}"
+                                    id="confirmPassword">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Agregar validación de contraseñas con JavaScript -->
+                <script th:inline="javascript">
+                document.getElementById('form-employee').onsubmit = function(e) {
+                    var password = document.getElementById('password').value;
+                    var confirm = document.getElementById('confirmPassword').value;
+                    
+                    if (password !== confirm) {
+                        alert('Las contraseñas no coinciden');
+                        e.preventDefault();
+                        return false;
+                    }
+                    
+                    // Validar que la contraseña no esté vacía en creación
+                    if (!/*[[${employeeId}]]*/ && !password) {
+                        alert('La contraseña es requerida');
+                        e.preventDefault();
+                        return false;
+                    }
+                    
+                    return true;
+                };
+                </script>
+
+                <!-- Estado -->
+                <div class="row">
+                    <div class="col-sm-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="active" name="active"
+                                    th:checked="${employee.active}">
+                            <label class="form-check-label" for="active">Activo</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botones -->
+        <div class="card-footer">
+            <button type="submit" class="btn btn-primary">Guardar</button>
+            <a th:href="@{/admin/seguridad/trabajadores}" class="btn btn-secondary">Cancelar</a>
+        </div>
+    </form>
+</body>
+</html> 

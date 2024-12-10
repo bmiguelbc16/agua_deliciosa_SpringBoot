@@ -15,22 +15,29 @@ public class LoginController {
     @GetMapping("/login")
     public String showLoginForm(Model model, 
                                 @RequestParam(required = false) String error,
-                                @RequestParam(required = false) String logout,
                                 HttpServletRequest request) {
         
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         
         if (auth != null && auth.isAuthenticated() && !auth.getName().equals("anonymousUser")) {
-            return "redirect:/";
+            String role = auth.getAuthorities().stream()
+                .findFirst()
+                .map(grantedAuthority -> {
+                    String roleStr = grantedAuthority.getAuthority().replace("ROLE_", "").toLowerCase();
+                    return roleStr.equals("cliente") ? "client" : roleStr;
+                })
+                .orElse("client");
+                
+            return String.format("redirect:/%s/dashboard", role);
         }
         
-        if (request.getSession().getAttribute("SPRING_SECURITY_LAST_EXCEPTION") != null) {
-            model.addAttribute("error", "Credenciales inválidas. Por favor, intente nuevamente.");
-            request.getSession().removeAttribute("SPRING_SECURITY_LAST_EXCEPTION");
+        if (error != null) {
+            model.addAttribute("error", "Credenciales inválidas");
         }
         
-        if (logout != null) {
-            model.addAttribute("message", "Has cerrado sesión exitosamente.");
+        if (request.getSession().getAttribute("showLogoutMessage") != null) {
+            model.addAttribute("message", "Has cerrado sesión exitosamente");
+            request.getSession().removeAttribute("showLogoutMessage");
         }
         
         return "auth/login";
@@ -46,11 +53,15 @@ public class LoginController {
         
         String role = auth.getAuthorities().stream()
             .findFirst()
-            .map(grantedAuthority -> grantedAuthority.getAuthority().replace("ROLE_", "").toLowerCase())
-            .orElse("cliente");
+            .map(grantedAuthority -> {
+                String roleStr = grantedAuthority.getAuthority().replace("ROLE_", "").toLowerCase();
+                // Asegurarnos de que sea "client" y no "cliente"
+                return roleStr.equals("cliente") ? "client" : roleStr;
+            })
+            .orElse("client");
             
         log.info("Redirigiendo a /{}/dashboard para el rol: {}", role, role);
         
         return String.format("redirect:/%s/dashboard", role);
     }
-} 
+}

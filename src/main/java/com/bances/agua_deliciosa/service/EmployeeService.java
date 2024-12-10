@@ -41,25 +41,38 @@ public class EmployeeService {
         if (search != null && !search.isEmpty()) {
             return employeeRepository.findByUserNameOrLastName(search, pageable);
         }
-        return employeeRepository.findAll(pageable);
+        return employeeRepository.findAllWithUserAndRoles(pageable);
     }
 
+    @Transactional
     public Employee create(EmployeeDTO dto) {
-        // Primero crear el employee
+        // Validar que el email no exista
+        if (userRepository.existsByEmail(dto.getEmail())) {
+            throw new RuntimeException("El email ya está registrado");
+        }
+        
+        // Validar que el DNI no exista
+        if (userRepository.existsByDocumentNumber(dto.getDocumentNumber())) {
+            throw new RuntimeException("El número de documento ya está registrado");
+        }
+
+        // Crear el empleado primero
         Employee employee = new Employee();
         employeeRepository.save(employee);
         
-        // Luego crear el usuario asociado
+        // Crear el usuario asociado
         User user = new User();
-        user.setDocumentNumber(dto.getDni());
+        user.setDocumentNumber(dto.getDocumentNumber());
         user.setName(dto.getName());
         user.setLastName(dto.getLastName());
         user.setGender(dto.getGender());
-        user.setPhoneNumber(dto.getTelefono());
+        user.setPhoneNumber(dto.getPhoneNumber());
         user.setEmail(dto.getEmail());
         user.setPassword(passwordEncoder.encode(dto.getPassword()));
         user.setUserableType("Employee");
         user.setUserableId(employee.getId());
+        user.setBirthDate(dto.getBirthDate());
+        user.setActive(dto.isActive());
         
         // Asignar rol
         Role role = roleRepository.findByName("ROLE_" + dto.getRole().toUpperCase())
@@ -74,21 +87,27 @@ public class EmployeeService {
     @Transactional
     public Employee update(Long id, EmployeeDTO dto) {
         Employee employee = findById(id);
-        
-        // Actualizar usuario
         User user = employee.getUser();
-        user.setDocumentNumber(dto.getDni());
-        user.setName(dto.getName());
-        user.setLastName(dto.getLastName());
-        user.setGender(dto.getGender());
-        user.setPhoneNumber(dto.getTelefono());
-        user.setEmail(dto.getEmail());
         
-        if (dto.getPassword() != null && !dto.getPassword().isEmpty()) {
+        // Validar contraseñas si se está actualizando
+        if (dto.getPassword() != null && !dto.getPassword().trim().isEmpty()) {
+            if (!dto.getPassword().equals(dto.getConfirmPassword())) {
+                throw new RuntimeException("Las contraseñas no coinciden");
+            }
             user.setPassword(passwordEncoder.encode(dto.getPassword()));
         }
         
-        // Actualizar rol si cambió
+        // Resto del código de actualización...
+        user.setDocumentNumber(dto.getDocumentNumber());
+        user.setName(dto.getName());
+        user.setLastName(dto.getLastName());
+        user.setGender(dto.getGender());
+        user.setPhoneNumber(dto.getPhoneNumber());
+        user.setEmail(dto.getEmail());
+        user.setBirthDate(dto.getBirthDate());
+        user.setActive(dto.isActive());
+        
+        // Actualizar rol
         if (dto.getRole() != null) {
             Role newRole = roleRepository.findByName("ROLE_" + dto.getRole().toUpperCase())
                 .orElseThrow(() -> new RuntimeException("Rol no encontrado"));
@@ -97,7 +116,6 @@ public class EmployeeService {
         }
         
         userRepository.save(user);
-        
         return employee;
     }
 

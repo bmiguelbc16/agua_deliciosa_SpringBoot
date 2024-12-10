@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+    th:replace="~{admin/layout/main :: layout(~{::title}, ~{::section}, ~{::link}, ~{::script})}">
+<head>
+    <title>Editar Trabajador</title>
+</head>
+<body>
+    <section>
+        <div class="row mb-4">
+            <h3>Editar trabajador</h3>
+        </div>
+
+        <div class="col-md-12 grid-margin stretch-card">
+            <div class="card">
+                <div class="card-body">
+                    <div th:replace="~{admin/employees/_form :: form}"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+</body>
+</html> 
