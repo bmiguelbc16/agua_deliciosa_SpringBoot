@@ -3,46 +3,57 @@ package com.bances.agua_deliciosa.controller.auth;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.ui.Model;
-import org.springframework.beans.factory.annotation.Autowired;
-import com.bances.agua_deliciosa.service.UserService;
-import com.bances.agua_deliciosa.controller.BaseController;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import com.bances.agua_deliciosa.controller.base.BaseController;
+import com.bances.agua_deliciosa.service.auth.AuthenticationService;
+import com.bances.agua_deliciosa.dto.auth.ResetPasswordDTO;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 @Controller
-@RequestMapping("/password")
+@RequestMapping("/auth/password")
+@RequiredArgsConstructor
 public class ResetPasswordController extends BaseController {
     
-    @Autowired
-    private UserService userService;
+    private final AuthenticationService authService;
     
     @GetMapping("/reset/{token}")
-    public String showResetForm(@PathVariable String token, Model model) {
-        if (!userService.isValidResetToken(token)) {
-            return "redirect:/password/forgot?invalid";
-        }
-        
+    public String showResetForm(
+        @PathVariable String token,
+        Model model
+    ) {
         model.addAttribute("token", token);
-        return "auth/passwords/reset";
+        model.addAttribute("resetPasswordDTO", new ResetPasswordDTO());
+        return view("reset-password");
     }
     
     @PostMapping("/reset")
-    public String reset(@Valid @RequestParam String token,
-                        @Valid @RequestParam String email,
-                        @Valid @RequestParam String password,
-                        @Valid @RequestParam String password_confirmation,
-                        Model model) {
-        
-        if (!password.equals(password_confirmation)) {
-            model.addAttribute("error", "Las contraseñas no coinciden");
-            return "auth/passwords/reset";
+    public String resetPassword(
+        @Valid @ModelAttribute ResetPasswordDTO resetPasswordDTO,
+        BindingResult result,
+        RedirectAttributes redirectAttributes
+    ) {
+        if (result.hasErrors()) {
+            return view("reset-password");
         }
         
         try {
-            userService.resetPassword(token, email, password);
-            return "redirect:/login?reset=success";
+            authService.resetPassword(
+                resetPasswordDTO.getToken(),
+                resetPasswordDTO.getEmail(),
+                resetPasswordDTO.getPassword()
+            );
+            addSuccessMessage(redirectAttributes, "Contraseña actualizada exitosamente");
+            return "redirect:/auth/login";
         } catch (Exception e) {
-            model.addAttribute("error", "No pudimos restablecer tu contraseña. Por favor intenta nuevamente.");
-            return "auth/passwords/reset";
+            addErrorMessage(redirectAttributes, e.getMessage());
+            return "redirect:/auth/password/reset/" + resetPasswordDTO.getToken();
         }
+    }
+    
+    @Override
+    protected String getViewPrefix() {
+        return "auth";
     }
 } 

@@ -1,46 +1,26 @@
 package com.bances.agua_deliciosa.model;
 
+import com.bances.agua_deliciosa.model.base.BaseEntity;
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.ToString;
-import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Set;
+import lombok.Getter;
+import lombok.Setter;
 
-@Data
 @Entity
 @Table(name = "roles")
-@EqualsAndHashCode(exclude = "users")
-@ToString(exclude = "users")
-public class Role {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+@Getter
+@Setter
+public class Role extends BaseEntity {
     
-    @Column(length = 125, nullable = false)
+    @Column(unique = true, nullable = false)
     private String name;
     
-    @Column(name = "guard_name")
+    @Column(name = "guard_name", nullable = false)
     private String guardName;
     
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
+    @Column(name = "description", nullable = false)
+    private String description;
     
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-    
-    @ManyToMany(mappedBy = "roles", fetch = FetchType.LAZY)
-    private Set<User> users = new HashSet<>();
-    
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-    }
-    
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+    public String getDisplayName() {
+        return name.replace("ROLE_", "");
     }
 } 

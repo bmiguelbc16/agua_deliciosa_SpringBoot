@@ -2,35 +2,39 @@ package com.bances.agua_deliciosa.controller.auth;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.ui.Model;
-import org.springframework.beans.factory.annotation.Autowired;
-import com.bances.agua_deliciosa.service.UserService;
-import com.bances.agua_deliciosa.controller.BaseController;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import com.bances.agua_deliciosa.controller.base.BaseController;
+import com.bances.agua_deliciosa.service.auth.AuthenticationService;
+import lombok.RequiredArgsConstructor;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.validation.Valid;
-
-@Controller
-@RequestMapping("/password")
+@Controller("authForgotPasswordController")
+@RequestMapping("/auth/password")
+@RequiredArgsConstructor
 public class ForgotPasswordController extends BaseController {
     
-    @Autowired
-    private UserService userService;
+    private final AuthenticationService authService;
     
     @GetMapping("/forgot")
-    public String showLinkRequestForm(Model model, HttpServletRequest request) {
-        addCommonAttributes(model, request);
-        return "auth/passwords/email";
+    public String showForgotForm() {
+        return view("forgot-password");
     }
     
-    @PostMapping("/email")
-    public String sendResetLinkEmail(@Valid @RequestParam String email, Model model) {
+    @PostMapping("/forgot")
+    public String sendResetLink(
+        @RequestParam String email,
+        RedirectAttributes redirectAttributes
+    ) {
         try {
-            userService.sendResetLinkEmail(email);
-            return "redirect:/password/forgot?status=sent";
+            authService.sendResetPasswordLink(email);
+            addSuccessMessage(redirectAttributes, "Se ha enviado un enlace a tu correo");
         } catch (Exception e) {
-            model.addAttribute("error", "No pudimos encontrar un usuario con esa dirección de correo electrónico.");
-            return "auth/passwords/email";
+            addErrorMessage(redirectAttributes, e.getMessage());
         }
+        return "redirect:/auth/password/forgot";
+    }
+    
+    @Override
+    protected String getViewPrefix() {
+        return "auth";
     }
 } 

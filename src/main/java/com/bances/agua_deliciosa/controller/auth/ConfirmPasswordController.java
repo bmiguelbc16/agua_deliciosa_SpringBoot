@@ -2,41 +2,53 @@ package com.bances.agua_deliciosa.controller.auth;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.ui.Model;
-import org.springframework.beans.factory.annotation.Autowired;
-import com.bances.agua_deliciosa.service.UserService;
-import com.bances.agua_deliciosa.controller.BaseController;
-
-import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import com.bances.agua_deliciosa.controller.base.BaseController;
+import com.bances.agua_deliciosa.service.auth.AuthenticationService;
+import com.bances.agua_deliciosa.dto.auth.ConfirmPasswordDTO;
 import jakarta.validation.Valid;
-import org.springframework.security.core.Authentication;
+import lombok.RequiredArgsConstructor;
+import org.springframework.validation.BindingResult;
+import org.springframework.ui.Model;
 
 @Controller
-@RequestMapping("/password")
+@RequestMapping("/auth/password")
+@RequiredArgsConstructor
 public class ConfirmPasswordController extends BaseController {
     
-    @Autowired
-    private UserService userService;
+    private final AuthenticationService authService;
     
     @GetMapping("/confirm")
-    public String showConfirmForm(Model model, HttpServletRequest request) {
-        addCommonAttributes(model, request);
-        return "auth/passwords/confirm";
+    public String showConfirmForm(Model model) {
+        model.addAttribute("confirmPasswordDTO", new ConfirmPasswordDTO());
+        return view("confirm-password");
     }
-        
+    
     @PostMapping("/confirm")
-    public String confirm(@Valid @RequestParam String password, 
-                            Authentication auth,
-                            Model model) {
-        try {
-            if (userService.confirmPassword(auth.getName(), password)) {
-                return "redirect:/home";
-            }
-            model.addAttribute("error", "La contraseña es incorrecta");
-            return "auth/passwords/confirm";
-        } catch (Exception e) {
-            model.addAttribute("error", "Error al confirmar la contraseña");
-            return "auth/passwords/confirm";
+    public String confirm(
+        @Valid @ModelAttribute ConfirmPasswordDTO confirmPasswordDTO,
+        BindingResult result,
+        RedirectAttributes redirectAttributes
+    ) {
+        if (result.hasErrors()) {
+            return view("confirm-password");
         }
+        
+        try {
+            authService.confirmPassword(
+                confirmPasswordDTO.getCurrentPassword(),
+                confirmPasswordDTO.getNewPassword()
+            );
+            addSuccessMessage(redirectAttributes, "Contraseña confirmada exitosamente");
+            return "redirect:/dashboard";
+        } catch (Exception e) {
+            addErrorMessage(redirectAttributes, e.getMessage());
+            return "redirect:/auth/password/confirm";
+        }
+    }
+    
+    @Override
+    protected String getViewPrefix() {
+        return "auth";
     }
 } 

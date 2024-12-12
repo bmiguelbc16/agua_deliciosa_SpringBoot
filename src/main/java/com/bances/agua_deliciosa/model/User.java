@@ -1,43 +1,81 @@
 package com.bances.agua_deliciosa.model;
 
+import com.bances.agua_deliciosa.model.base.BaseEntity;
 import jakarta.persistence.*;
-import lombok.Data;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.Collection;
-import java.util.stream.Collectors;
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
 
-@Data
 @Entity
 @Table(name = "users")
-public class User implements UserDetails {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+@Getter
+@Setter
+public class User extends BaseEntity implements UserDetails {
     
-    @Column(name = "document_number", length = 11, unique = true)
-    private String documentNumber;
-    
+    @Column(nullable = false)
     private String name;
     
-    @Column(name = "last_name")
+    @Column(name = "last_name", nullable = false)
     private String lastName;
     
-    @Column(name = "birth_date")
-    private LocalDate birthDate;
+    @Column(unique = true, nullable = false)
+    private String email;
     
-    private String gender;
+    @Column(name = "document_number", unique = true)
+    private String documentNumber;
+    
+    @Column(name = "birth_date", nullable = false)
+    private LocalDate birthDate;
     
     @Column(name = "phone_number")
     private String phoneNumber;
     
-    @Column(unique = true)
-    private String email;
+    @Column(nullable = false)
+    private String password;
+    
+    @Column(name = "email_verified_at")
+    private LocalDateTime emailVerifiedAt;
+    
+    @Column(name = "remember_token")
+    private String rememberToken;
+    
+    private boolean active = true;
+    
+    @OneToOne
+    @JoinColumn(name = "employee_id")
+    private Employee employee;
+    
+    @OneToOne
+    @JoinColumn(name = "client_id")
+    private Client client;
+    
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+        name = "user_roles",
+        joinColumns = @JoinColumn(name = "user_id"),
+        inverseJoinColumns = @JoinColumn(name = "role_id")
+    )
+    private Set<Role> roles = new HashSet<>();
+    
+    @Column(name = "verification_token")
+    private String verificationToken;
+    
+    @Column(name = "verification_token_created_at")
+    private LocalDateTime verificationTokenCreatedAt;
+    
+    @Column(name = "reset_token")
+    private String resetToken;
+    
+    @Column(name = "reset_token_created_at")
+    private LocalDateTime resetTokenCreatedAt;
     
     @Column(name = "userable_type")
     private String userableType;
@@ -45,38 +83,30 @@ public class User implements UserDetails {
     @Column(name = "userable_id")
     private Long userableId;
     
-    private String password;
-    
-    @Column(name = "remember_token")
-    private String rememberToken;
-    
-    private boolean active = true;
-    
-    @Column(name = "email_verified_at")
-    private LocalDateTime emailVerifiedAt;
-    
-    @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(
-        name = "model_has_roles",
-        joinColumns = @JoinColumn(name = "model_id"),
-        inverseJoinColumns = @JoinColumn(name = "role_id")
-    )
-    private Set<Role> roles = new HashSet<>();
+    @Transient
+    private Set<SimpleGrantedAuthority> authorities = new HashSet<>();
     
     public String getFullName() {
-        return String.format("%s %s", name, lastName);
+        return name + " " + lastName;
+    }
+    
+    public boolean isEmailVerified() {
+        return emailVerifiedAt != null;
     }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return roles.stream()
-            .map(role -> new SimpleGrantedAuthority(role.getName()))
-            .collect(Collectors.toList());
+        if (authorities == null || authorities.isEmpty()) {
+            authorities = roles.stream()
+                .map(role -> new SimpleGrantedAuthority("ROLE_" + role.getName()))
+                .collect(Collectors.toSet());
+        }
+        return authorities;
     }
 
     @Override
     public String getUsername() {
-        return this.email;
+        return email;
     }
 
     @Override
@@ -96,6 +126,18 @@ public class User implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return this.active;
+        return active;
+    }
+
+    public String getRememberToken() {
+        return rememberToken;
+    }
+
+    public void setRememberToken(String rememberToken) {
+        this.rememberToken = rememberToken;
+    }
+
+    public void setAuthorities(Set<SimpleGrantedAuthority> authorities) {
+        this.authorities = authorities;
     }
 } 

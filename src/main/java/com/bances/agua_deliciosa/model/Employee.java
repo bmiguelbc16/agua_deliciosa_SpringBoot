@@ -1,44 +1,31 @@
 package com.bances.agua_deliciosa.model;
 
+import com.bances.agua_deliciosa.model.base.BaseEntity;
 import jakarta.persistence.*;
-import lombok.Data;
-import java.time.LocalDateTime;
-import java.util.Map;
-import org.hibernate.annotations.Where;
+import lombok.Getter;
+import lombok.Setter;
+import java.math.BigDecimal;
+import java.time.LocalDate;
 
-@Data
 @Entity
 @Table(name = "employees")
-public class Employee {
-    public static final Map<String, String> OPTIONS_GENDER = Map.of(
-        "M", "MASCULINO",
-        "F", "FEMENINO"
-    );
+@Getter
+@Setter
+public class Employee extends BaseEntity {
     
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(name = "position", nullable = false)
+    private String position;
     
-    @OneToOne
-    @JoinColumn(name = "id", referencedColumnName = "userable_id", 
-                insertable = false, updatable = false)
-    @Where(clause = "userable_type = 'Employee'")
+    @Column(name = "salary")
+    private BigDecimal salary;
+    
+    @Column(name = "hire_date", nullable = false)
+    private LocalDate hireDate;
+    
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Gender gender;
+    
+    @OneToOne(mappedBy = "employee")
     private User user;
-    
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
-    
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-    
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-    }
-    
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
 } 

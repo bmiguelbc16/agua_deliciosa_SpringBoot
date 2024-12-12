@@ -3,65 +3,54 @@ package com.bances.agua_deliciosa.controller.auth;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.ui.Model;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import jakarta.servlet.http.HttpServletRequest;
-import lombok.extern.slf4j.Slf4j;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import com.bances.agua_deliciosa.controller.base.BaseController;
+import com.bances.agua_deliciosa.service.auth.AuthenticationService;
+import com.bances.agua_deliciosa.dto.auth.LoginDTO;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
-@Controller
-@Slf4j
-public class LoginController {
+@Controller("authLoginController")
+@RequestMapping("/auth")
+@RequiredArgsConstructor
+public class LoginController extends BaseController {
+    
+    private final AuthenticationService authService;
     
     @GetMapping("/login")
-    public String showLoginForm(Model model, 
-                                @RequestParam(required = false) String error,
-                                HttpServletRequest request) {
-        
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        
-        if (auth != null && auth.isAuthenticated() && !auth.getName().equals("anonymousUser")) {
-            String role = auth.getAuthorities().stream()
-                .findFirst()
-                .map(grantedAuthority -> {
-                    String roleStr = grantedAuthority.getAuthority().replace("ROLE_", "").toLowerCase();
-                    return roleStr.equals("cliente") ? "client" : roleStr;
-                })
-                .orElse("client");
-                
-            return String.format("redirect:/%s/dashboard", role);
-        }
-        
-        if (error != null) {
-            model.addAttribute("error", "Credenciales inválidas");
-        }
-        
-        if (request.getSession().getAttribute("showLogoutMessage") != null) {
-            model.addAttribute("message", "Has cerrado sesión exitosamente");
-            request.getSession().removeAttribute("showLogoutMessage");
-        }
-        
+    public String showLoginForm(Model model) {
+        model.addAttribute("loginDTO", new LoginDTO());
         return "auth/login";
     }
     
-    @GetMapping("/dashboard")
-    public String dashboard() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        
-        if (auth == null || !auth.isAuthenticated()) {
-            return "redirect:/login";
+    @PostMapping("/auth/login")
+    public String login(
+        @Valid @ModelAttribute LoginDTO loginDTO,
+        BindingResult result,
+        RedirectAttributes redirectAttributes
+    ) {
+        if (result.hasErrors()) {
+            return "auth/login";
         }
         
-        String role = auth.getAuthorities().stream()
-            .findFirst()
-            .map(grantedAuthority -> {
-                String roleStr = grantedAuthority.getAuthority().replace("ROLE_", "").toLowerCase();
-                // Asegurarnos de que sea "client" y no "cliente"
-                return roleStr.equals("cliente") ? "client" : roleStr;
-            })
-            .orElse("client");
-            
-        log.info("Redirigiendo a /{}/dashboard para el rol: {}", role, role);
-        
-        return String.format("redirect:/%s/dashboard", role);
+        try {
+            authService.authenticate(loginDTO.getEmail(), loginDTO.getPassword());
+            // La redirección la maneja el AuthenticationSuccessHandler
+            return null;
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Credenciales inválidas");
+            return "redirect:/login";
+        }
+    }
+    
+    @GetMapping("/logout")
+    public String logout() {
+        return "redirect:/auth/login?logout";
+    }
+    
+    @Override
+    protected String getViewPrefix() {
+        return "auth";
     }
 }

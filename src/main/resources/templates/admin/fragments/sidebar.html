@@ -1,108 +1,87 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" 
+<html xmlns:th="http://www.thymeleaf.org"
     xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
-<body>
-    <aside th:fragment="sidebar" class="main-sidebar sidebar-dark-primary elevation-4">
-        <!-- Brand Logo -->
-        <a th:href="@{/admin/dashboard}" class="brand-link">
-            <img th:src="@{/dist/img/AdminLTELogo.png}" alt="AdminLTE Logo" 
-                class="brand-image img-circle elevation-3">
-            <span class="brand-text font-weight-light">Agua Deliciosa</span>
-        </a>
+<aside class="main-sidebar sidebar-dark-primary elevation-4" th:fragment="sidebar">
+    <!-- Brand Logo -->
+    <a href="/admin/dashboard" class="brand-link">
+        <img th:src="@{/dist/img/AdminLTELogo.png}" alt="AdminLTE Logo" 
+             class="brand-image img-circle elevation-3" style="opacity: .8">
+        <span class="brand-text font-weight-light">Agua Deliciosa</span>
+    </a>
 
-        <!-- Sidebar -->
-        <div class="sidebar">
-            <!-- Sidebar Menu -->
-            <nav class="mt-2">
-                <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
-                    <!-- Principal -->
-                    <li class="nav-item" sec:authorize="hasAnyRole('ADMIN','GESTOR','VENDEDOR','ALMACEN')">
-                        <a th:href="@{/admin/dashboard}" class="nav-link" 
-                            th:classappend="${currentUrl == '/admin/dashboard' ? 'active' : ''}">
-                            <i class="nav-icon fas fa-tachometer-alt"></i>
-                            <p>Dashboard</p>
-                        </a>
-                    </li>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <!-- Sidebar Menu -->
+        <nav class="mt-2">
+            <ul class="nav nav-pills nav-sidebar flex-column nav-child-indent nav-compact" 
+                data-widget="treeview" role="menu" data-accordion="false">
+                
+                <!-- Dashboard -->
+                <li class="nav-header">PRINCIPAL</li>
+                <li class="nav-item">
+                    <a th:href="@{/admin/dashboard}" class="nav-link" 
+                       th:classappend="${menuActive == 'dashboard'} ? 'active'">
+                        <i class="nav-icon fas fa-tachometer-alt"></i>
+                        <p>Dashboard</p>
+                    </a>
+                </li>
 
-                    <!-- Seguridad - Solo Admin -->
-                    <li class="nav-item" sec:authorize="hasRole('ADMIN')">
-                        <a href="#" class="nav-link">
-                            <i class="nav-icon fas fa-shield-alt"></i>
-                            <p>
-                                Seguridad
-                                <i class="fas fa-angle-left right"></i>
-                            </p>
-                        </a>
-                        <ul class="nav nav-treeview">
-                            <li class="nav-item">
-                                <a th:href="@{/admin/seguridad/trabajadores}" class="nav-link"
-                                    th:classappend="${currentUrl != null && currentUrl.startsWith('/admin/seguridad/trabajadores')} ? 'active'">
-                                    <i class="far fa-circle nav-icon"></i>
-                                    <p>Trabajadores</p>
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
+                <!-- Gestión de Usuarios -->
+                <li class="nav-header">USUARIOS</li>
+                <li class="nav-item" sec:authorize="hasRole('Admin')">
+                    <a th:href="@{/admin/employees}" class="nav-link" 
+                       th:classappend="${menuActive == 'employees'} ? 'active'">
+                        <i class="nav-icon fas fa-users"></i>
+                        <p>Empleados</p>
+                        <span class="badge badge-info right">6</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/admin/clients}" class="nav-link" 
+                       th:classappend="${menuActive == 'clients'} ? 'active'">
+                        <i class="nav-icon fas fa-user-friends"></i>
+                        <p>Clientes</p>
+                        <span class="badge badge-success right">12</span>
+                    </a>
+                </li>
 
-                    <!-- Registros -->
-                    <li class="nav-item" sec:authorize="hasAnyRole('ADMIN','VENDEDOR','GESTOR','ALMACEN')">
-                        <a href="#" class="nav-link">
-                            <i class="nav-icon fas fa-book"></i>
-                            <p>
-                                Registros
-                                <i class="fas fa-angle-left right"></i>
-                            </p>
-                        </a>
-                        <ul class="nav nav-treeview">
-                            <!-- Clientes - Admin y Vendedor -->
-                            <li class="nav-item" sec:authorize="hasAnyRole('ADMIN','VENDEDOR')">
-                                <a th:href="@{/admin/registros/clientes}" class="nav-link"
-                                    th:classappend="${currentUrl?.startsWith('/admin/registros/clientes') ? 'active' : ''}">
-                                    <i class="far fa-circle nav-icon"></i>
-                                    <p>Clientes</p>
-                                </a>
-                            </li>
+                <!-- Gestión de Pedidos -->
+                <li class="nav-header">OPERACIONES</li>
+                <li class="nav-item">
+                    <a th:href="@{/admin/orders}" class="nav-link" 
+                       th:classappend="${menuActive == 'orders'} ? 'active'">
+                        <i class="nav-icon fas fa-shopping-cart"></i>
+                        <p>Pedidos</p>
+                        <span class="badge badge-warning right">3</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a th:href="@{/admin/products}" class="nav-link" 
+                       th:classappend="${menuActive == 'products'} ? 'active'">
+                        <i class="nav-icon fas fa-box"></i>
+                        <p>Productos</p>
+                        <span class="badge badge-danger right">8</span>
+                    </a>
+                </li>
 
-                            <!-- Productos - Solo Admin -->
-                            <li class="nav-item" sec:authorize="hasRole('ADMIN')">
-                                <a th:href="@{/admin/registros/productos}" class="nav-link"
-                                    th:classappend="${currentUrl?.startsWith('/admin/registros/productos') ? 'active' : ''}">
-                                    <i class="far fa-circle nav-icon"></i>
-                                    <p>Productos</p>
-                                </a>
-                            </li>
-
-                            <!-- Ingreso de Productos - Admin y Almacén -->
-                            <li class="nav-item" sec:authorize="hasAnyRole('ADMIN','ALMACEN')">
-                                <a th:href="@{/admin/registros/ingreso-de-productos}" class="nav-link"
-                                    th:classappend="${currentUrl?.startsWith('/admin/registros/ingreso-de-productos') ? 'active' : ''}">
-                                    <i class="far fa-circle nav-icon"></i>
-                                    <p>Ingreso de Productos</p>
-                                </a>
-                            </li>
-
-                            <!-- Salida de Productos - Admin y Almacén -->
-                            <li class="nav-item" sec:authorize="hasAnyRole('ADMIN','ALMACEN')">
-                                <a th:href="@{/admin/registros/salida-de-productos}" class="nav-link"
-                                    th:classappend="${currentUrl?.startsWith('/admin/registros/salida-de-productos') ? 'active' : ''}">
-                                    <i class="far fa-circle nav-icon"></i>
-                                    <p>Salida de Productos</p>
-                                </a>
-                            </li>
-
-                            <!-- Pedidos - Admin, Vendedor y Gestor -->
-                            <li class="nav-item" sec:authorize="hasAnyRole('ADMIN','VENDEDOR','GESTOR')">
-                                <a th:href="@{/admin/registros/pedidos}" class="nav-link"
-                                    th:classappend="${currentUrl?.startsWith('/admin/registros/pedidos') ? 'active' : ''}">
-                                    <i class="far fa-circle nav-icon"></i>
-                                    <p>Pedidos</p>
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
-                </ul>
-            </nav>
-        </div>
-    </aside>
-</body>
+                <!-- Configuración -->
+                <li class="nav-header" sec:authorize="hasRole('Admin')">CONFIGURACIÓN</li>
+                <li class="nav-item" sec:authorize="hasRole('Admin')">
+                    <a th:href="@{/admin/roles}" class="nav-link" 
+                       th:classappend="${menuActive == 'roles'} ? 'active'">
+                        <i class="nav-icon fas fa-user-tag"></i>
+                        <p>Roles</p>
+                    </a>
+                </li>
+                <li class="nav-item" sec:authorize="hasRole('Admin')">
+                    <a th:href="@{/admin/settings}" class="nav-link" 
+                       th:classappend="${menuActive == 'settings'} ? 'active'">
+                        <i class="nav-icon fas fa-cog"></i>
+                        <p>General</p>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+</aside>
 </html> 

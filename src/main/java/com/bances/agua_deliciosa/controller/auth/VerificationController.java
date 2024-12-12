@@ -2,34 +2,35 @@ package com.bances.agua_deliciosa.controller.auth;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.beans.factory.annotation.Autowired;
-import com.bances.agua_deliciosa.service.UserService;
-import com.bances.agua_deliciosa.controller.BaseController;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import com.bances.agua_deliciosa.controller.base.BaseController;
+import com.bances.agua_deliciosa.service.auth.AuthenticationService;
+import lombok.RequiredArgsConstructor;
 
 @Controller
-@RequestMapping("/email")
+@RequestMapping("/auth/email")
+@RequiredArgsConstructor
 public class VerificationController extends BaseController {
     
-    @Autowired
-    private UserService userService;
+    private final AuthenticationService authService;
     
-    @GetMapping("/verify/{id}/{hash}")
-    public String verify(@PathVariable Long id, @PathVariable String hash) {
+    @GetMapping("/verify/{userId}/{token}")
+    public String verifyEmail(
+        @PathVariable Long userId,
+        @PathVariable String token,
+        RedirectAttributes redirectAttributes
+    ) {
         try {
-            userService.verifyEmail(id, hash);
-            return "redirect:/login?verified=1";
+            authService.verifyEmail(userId, token);
+            addSuccessMessage(redirectAttributes, "Email verificado exitosamente");
         } catch (Exception e) {
-            return "redirect:/login?verified=0";
+            addErrorMessage(redirectAttributes, e.getMessage());
         }
+        return "redirect:/auth/login";
     }
     
-    @GetMapping("/verify/resend")
-    public String resend() {
-        try {
-            userService.resendVerificationEmail();
-            return "redirect:/login?resent=1";
-        } catch (Exception e) {
-            return "redirect:/login?resent=0";
-        }
+    @Override
+    protected String getViewPrefix() {
+        return "auth";
     }
 } 

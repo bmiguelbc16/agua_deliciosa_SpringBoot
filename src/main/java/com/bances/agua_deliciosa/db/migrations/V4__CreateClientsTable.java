@@ -13,6 +13,11 @@ public class V4__CreateClientsTable implements Migration {
             stmt.execute("""
                 CREATE TABLE IF NOT EXISTS clients (
                     id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                    address VARCHAR(255),
+                    reference VARCHAR(255),
+                    latitude DOUBLE,
+                    longitude DOUBLE,
+                    gender VARCHAR(1) NOT NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
                 )

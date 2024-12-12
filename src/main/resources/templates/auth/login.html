@@ -4,28 +4,42 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Login | Agua Deliciosa</title>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" th:href="@{/plugins/fontawesome-free/css/all.min.css}">
+    <!-- icheck bootstrap -->
+    <link rel="stylesheet" th:href="@{/plugins/icheck-bootstrap/icheck-bootstrap.min.css}">
+    <!-- Theme style -->
     <link rel="stylesheet" th:href="@{/dist/css/adminlte.min.css}">
 </head>
 <body class="hold-transition login-page">
     <div class="login-box">
-        <div class="card">
-            <div class="card-body login-card-body">
-                <p class="login-box-msg">Iniciar sesión</p>
+        <!-- /.login-logo -->
+        <div class="card card-outline card-primary">
+            <div class="card-header text-center">
+                <a href="#" class="h1"><b>Agua</b> Deliciosa</a>
+            </div>
+            <div class="card-body">
+                <p class="login-box-msg">Iniciar sesión en el sistema</p>
                 
-                <div th:if="${param.error}" class="alert alert-danger">
+                <div th:if="${param.error}" class="alert alert-danger alert-dismissible">
+                    <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+                    <h5><i class="icon fas fa-ban"></i> Error!</h5>
                     Credenciales inválidas. Por favor, intente nuevamente.
                 </div>
-                <div th:if="${message}" class="alert alert-success" th:text="${message}">
-                    Has cerrado sesión exitosamente.
+                <div th:if="${message}" class="alert alert-success alert-dismissible">
+                    <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+                    <h5><i class="icon fas fa-check"></i> Éxito!</h5>
+                    <span th:text="${message}">Has cerrado sesión exitosamente.</span>
                 </div>
 
-                <form th:action="@{/login}" method="post">
+                <form th:action="@{/auth/login}" method="post">
                     <div class="input-group mb-3">
                         <input type="email" 
-                                name="email" 
-                                class="form-control" 
-                                placeholder="Email" 
-                                required>
+                               name="email" 
+                               class="form-control" 
+                               placeholder="Email" 
+                               value="admin@example.com"
+                               required>
                         <div class="input-group-append">
                             <div class="input-group-text">
                                 <span class="fas fa-envelope"></span>
@@ -34,10 +48,11 @@
                     </div>
                     <div class="input-group mb-3">
                         <input type="password" 
-                                name="password" 
-                                class="form-control" 
-                                placeholder="Contraseña" 
-                                required>
+                               name="password" 
+                               class="form-control" 
+                               placeholder="Contraseña" 
+                               value="password"	
+                               required>
                         <div class="input-group-append">
                             <div class="input-group-text">
                                 <span class="fas fa-lock"></span>
@@ -45,7 +60,15 @@
                         </div>
                     </div>
                     <div class="row">
-                        <div class="col-12">
+                        <div class="col-8">
+                            <div class="icheck-primary">
+                                <input type="checkbox" id="remember">
+                                <label for="remember">
+                                    Recordarme
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-4">
                             <button type="submit" class="btn btn-primary btn-block">Ingresar</button>
                         </div>
                     </div>

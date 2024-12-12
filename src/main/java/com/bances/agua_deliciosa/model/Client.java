@@ -1,45 +1,32 @@
 package com.bances.agua_deliciosa.model;
 
+import com.bances.agua_deliciosa.model.base.BaseEntity;
 import jakarta.persistence.*;
-import org.hibernate.annotations.Where;
-import lombok.Data;
-import java.time.LocalDateTime;
-import java.util.Map;
+import lombok.Getter;
+import lombok.Setter;
 
-
-@Data
 @Entity
 @Table(name = "clients")
-public class Client {
-    public static final Map<String, String> OPTIONS_GENDER = Map.of(
-        "M", "MASCULINO",
-        "F", "FEMENINO"
-    );
+@Getter
+@Setter
+public class Client extends BaseEntity {
     
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column
+    private String address;
     
-    @OneToOne
-    @JoinColumn(name = "id", referencedColumnName = "userable_id", 
-                insertable = false, updatable = false)
-    @Where(clause = "userable_type = 'Client'")
+    @Column
+    private String reference;
+    
+    @Column
+    private Double latitude;
+    
+    @Column
+    private Double longitude;
+    
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Gender gender;
+    
+    @OneToOne(mappedBy = "client")
     private User user;
-    
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
-    
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-    
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-    }
-    
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
 } 
