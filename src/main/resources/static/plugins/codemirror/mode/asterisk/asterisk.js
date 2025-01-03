@@ -61,7 +61,7 @@ CodeMirror.defineMode("asterisk", function() {
                   "trysystem","unpausemonitor","unpausequeuemember","userevent","verbose","vmauthenticate",
                   "vmsayname","voicemail","voicemailmain","wait","waitexten","waitfornoise","waitforring",
                   "waitforsilence","waitmusiconhold","waituntil","while","zapateller"
-                 ];
+                  ];
 
   function basicToken(stream,state){
     var cur = '';

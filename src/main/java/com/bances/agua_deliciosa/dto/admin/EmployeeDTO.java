@@ -1,26 +1,32 @@
 package com.bances.agua_deliciosa.dto.admin;
 
 import com.bances.agua_deliciosa.dto.base.BaseUserDTO;
-import jakarta.validation.constraints.NotBlank;
+
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
 public class EmployeeDTO extends BaseUserDTO {
+    private String roles;  // Necesitamos este campo para el rol del empleado
     
-    @NotBlank(message = "El rol es requerido")
-    private String role;
+    public EmployeeDTO() {
+        this.setActive(true);
+        this.setUserableType("Employee");
+    }
     
     @Override
     public String toString() {
         return "EmployeeDTO{" +
-            "name='" + getName() + '\'' +
+            "id=" + getId() +
+            ", name='" + getName() + '\'' +
             ", lastName='" + getLastName() + '\'' +
             ", email='" + getEmail() + '\'' +
             ", documentNumber='" + getDocumentNumber() + '\'' +
             ", phoneNumber='" + getPhoneNumber() + '\'' +
-            ", role='" + role + '\'' +
+            ", roles='" + getRoles() + '\'' +
+            ", birthDate=" + getBirthDate() +
+            ", active=" + getActive() +
             '}';
     }
-} 
+}

@@ -1,9 +1,12 @@
 package com.bances.agua_deliciosa.service.auth;
 
+import com.bances.agua_deliciosa.exception.UnauthorizedAccessException;
+import com.bances.agua_deliciosa.exception.InvalidPasswordException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Service;
 import lombok.RequiredArgsConstructor;
 
@@ -15,38 +18,44 @@ public class AuthenticationService {
     private final CoreUserService userService;
     private final SecurityService securityService;
     
+    // Método para autenticar al usuario con email y contraseña
     public void authenticate(String email, String password) {
-        Authentication auth = authenticationManager.authenticate(
-            new UsernamePasswordAuthenticationToken(email, password)
-        );
-        SecurityContextHolder.getContext().setAuthentication(auth);
+        try {
+            Authentication auth = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(email, password)
+            );
+            SecurityContextHolder.getContext().setAuthentication(auth);
+        } catch (BadCredentialsException e) {
+            throw new UnauthorizedAccessException("Credenciales incorrectas", e);
+        }
     }
     
-    public void verifyEmail(Long userId, String hash) {
-        userService.verifyEmail(userId, hash);
+    // Método para verificar email
+    public void verifyEmail(Long userId) {
+        userService.verifyEmail(userId);
     }
     
-    public void resetPassword(String token, String email, String password) {
-        userService.resetPassword(token, email, password);
+    // Método para restablecer la contraseña
+    public void resetPassword(String email, String password) {
+        userService.resetPassword(email, password);
     }
     
+    // Método para enviar el enlace de restablecimiento de contraseña
     public void sendResetPasswordLink(String email) {
         userService.sendResetPasswordLink(email);
     }
     
+    // Método para cambiar la contraseña
     public void confirmPassword(String currentPassword, String newPassword) {
-        // Obtener el usuario actual
         var user = securityService.getCurrentUser();
         if (user == null) {
-            throw new RuntimeException("Usuario no autenticado");
+            throw new UnauthorizedAccessException("Usuario no autenticado");
         }
         
-        // Verificar la contraseña actual
         if (!userService.checkPassword(user, currentPassword)) {
-            throw new RuntimeException("La contraseña actual es incorrecta");
+            throw new InvalidPasswordException("La contraseña actual es incorrecta");
         }
         
-        // Actualizar la contraseña
         userService.updatePassword(user.getId(), newPassword);
     }
-} 
+}

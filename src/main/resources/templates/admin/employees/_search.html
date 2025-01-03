@@ -1,22 +1,48 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <body>
-    <form th:fragment="search" id="search" th:action="@{/admin/seguridad/trabajadores}" method="get">
-        <div class="row">
-            <div class="col-12 col-md-6">
-                <div class="mb-3">
-                    <label class="form-label">Nombre:</label>
-                    <input type="text" name="search" class="form-control" 
-                            placeholder="Buscar por nombre o apellido"
-                            th:value="${param.search}">
-                </div>
-            </div>
-            <div class="col-auto d-flex align-items-end">
-                <div class="mb-3">
-                    <button type="submit" class="btn btn-primary">Buscar</button>
-                </div>
+    <div th:fragment="searchForm">
+        <div class="input-group">
+            <input type="text" 
+                   id="searchInput"
+                   name="search"
+                   class="form-control" 
+                   placeholder="Buscar por DNI, nombre o apellido...">
+            <div class="input-group-append">
+                <button type="button" id="searchButton" class="btn btn-primary">
+                    <i class="fas fa-search"></i> Buscar
+                </button>
+                <a th:href="@{/admin/employees}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Limpiar
+                </a>
             </div>
         </div>
-    </form>
+        <script>
+        function performSearch() {
+            var searchTerm = document.getElementById('searchInput').value;
+            fetch('/admin/employees/search', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'search=' + encodeURIComponent(searchTerm)
+            })
+            .then(response => response.text())
+            .then(html => {
+                document.querySelector('table tbody').innerHTML = 
+                    new DOMParser().parseFromString(html, 'text/html')
+                        .querySelector('tbody').innerHTML;
+            });
+        }
+
+        document.getElementById('searchButton').addEventListener('click', performSearch);
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                performSearch();
+            }
+        });
+        </script>
+    </div>
 </body>
 </html> 

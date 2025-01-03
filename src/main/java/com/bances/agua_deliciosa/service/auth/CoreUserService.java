@@ -8,7 +8,6 @@ import com.bances.agua_deliciosa.model.Role;
 import com.bances.agua_deliciosa.repository.UserRepository;
 import com.bances.agua_deliciosa.service.core.RoleService;
 import com.bances.agua_deliciosa.service.system.EmailService;
-import com.bances.agua_deliciosa.service.system.TokenService;
 import java.time.LocalDateTime;
 
 @Service
@@ -18,20 +17,17 @@ public class CoreUserService extends UserService {
     private final PasswordEncoder passwordEncoder;
     private final RoleService roleService;
     private final EmailService emailService;
-    private final TokenService tokenService;
     
     public CoreUserService(
         UserRepository userRepository,
         PasswordEncoder passwordEncoder,
         RoleService roleService,
-        EmailService emailService,
-        TokenService tokenService
+        EmailService emailService
     ) {
         super(userRepository);
         this.passwordEncoder = passwordEncoder;
         this.roleService = roleService;
         this.emailService = emailService;
-        this.tokenService = tokenService;
     }
     
     @Transactional
@@ -48,7 +44,7 @@ public class CoreUserService extends UserService {
     public User createUser(User user, String password, String roleName) {
         user.setPassword(passwordEncoder.encode(password));
         Role role = roleService.getByName(roleName);
-        user.getRoles().add(role);
+        user.setRole(role);
         return save(user);
     }
     
@@ -68,30 +64,18 @@ public class CoreUserService extends UserService {
     }
     
     @Transactional
-    public void verifyEmail(Long userId, String hash) {
+    public void verifyEmail(Long userId) {
         User user = getById(userId);
-        
-        if (!tokenService.validateVerificationToken(user, hash)) {
-            throw new RuntimeException("Hash de verificación inválido");
-        }
-        
         user.setEmailVerifiedAt(LocalDateTime.now());
         save(user);
         emailService.sendEmailVerifiedNotification(user.getEmail());
     }
     
     @Transactional
-    public void resetPassword(String token, String email, String password) {
+    public void resetPassword(String email, String password) {
         User user = userRepository.findByEmail(email)
             .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-            
-        if (!tokenService.validateResetToken(user, token)) {
-            throw new RuntimeException("Token de reseteo inválido");
-        }
-        
         user.setPassword(passwordEncoder.encode(password));
-        user.setResetToken(null);
-        user.setResetTokenCreatedAt(null);
         save(user);
     }
     
@@ -99,8 +83,42 @@ public class CoreUserService extends UserService {
     public void sendResetPasswordLink(String email) {
         User user = userRepository.findByEmail(email)
             .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-            
-        String token = tokenService.generatePasswordResetToken(user);
-        emailService.sendPasswordResetEmail(user.getEmail(), token);
+        emailService.sendResetPasswordLink(user.getEmail());
     }
-} 
+    
+    @Transactional
+    public User updateUser(Long userId, User updatedUser, String roleName) {
+        User user = getById(userId);
+        
+        // Actualizar campos básicos
+        user.setName(updatedUser.getName());
+        user.setLastName(updatedUser.getLastName());
+        user.setPhoneNumber(updatedUser.getPhoneNumber());
+        user.setBirthDate(updatedUser.getBirthDate());
+        user.setGender(updatedUser.getGender());
+        
+        // Actualizar email si ha cambiado
+        if (!user.getEmail().equals(updatedUser.getEmail())) {
+            if (userRepository.existsByEmailAndIdNot(updatedUser.getEmail(), userId)) {
+                throw new RuntimeException("El email ya está registrado");
+            }
+            user.setEmail(updatedUser.getEmail());
+        }
+        
+        // Actualizar documento si ha cambiado
+        if (!user.getDocumentNumber().equals(updatedUser.getDocumentNumber())) {
+            if (userRepository.existsByDocumentNumberAndIdNot(updatedUser.getDocumentNumber(), userId)) {
+                throw new RuntimeException("El documento ya está registrado");
+            }
+            user.setDocumentNumber(updatedUser.getDocumentNumber());
+        }
+        
+        // Actualizar rol si ha cambiado
+        if (roleName != null && !user.getRole().getName().equals(roleName)) {
+            Role role = roleService.getByName(roleName);
+            user.setRole(role);
+        }
+        
+        return save(user);
+    }
+}

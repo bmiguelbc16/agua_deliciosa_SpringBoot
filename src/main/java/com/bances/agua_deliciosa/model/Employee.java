@@ -1,31 +1,47 @@
 package com.bances.agua_deliciosa.model;
 
-import com.bances.agua_deliciosa.model.base.BaseEntity;
-import jakarta.persistence.*;
+import java.time.LocalDateTime;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
-import java.math.BigDecimal;
-import java.time.LocalDate;
 
 @Entity
 @Table(name = "employees")
 @Getter
 @Setter
-public class Employee extends BaseEntity {
-    
-    @Column(name = "position", nullable = false)
-    private String position;
-    
-    @Column(name = "salary")
-    private BigDecimal salary;
-    
-    @Column(name = "hire_date", nullable = false)
-    private LocalDate hireDate;
-    
-    @Enumerated(EnumType.STRING)
+public class Employee {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
     @Column(nullable = false)
-    private Gender gender;
-    
+    private LocalDateTime createdAt;
+
+    @Column(nullable = false)
+    private LocalDateTime updatedAt;
+
     @OneToOne(mappedBy = "employee")
     private User user;
-} 
+
+    @PrePersist
+    public void prePersist() {
+        LocalDateTime now = LocalDateTime.now();
+        this.createdAt = now;
+        this.updatedAt = now;
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
+}

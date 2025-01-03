@@ -5,20 +5,15 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
-import java.util.Set;
-import java.util.stream.Collectors;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity
 public class SecurityConfig {
 
     @Bean
@@ -26,17 +21,9 @@ public class SecurityConfig {
         return http
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers(
-                    "/static/**", 
-                    "/plugins/**", 
-                    "/dist/**", 
-                    "/css/**", 
-                    "/js/**", 
-                    "/img/**",
-                    "/webjars/**"
-                ).permitAll()
+                .requestMatchers("/static/**", "/plugins/**", "/dist/**", "/css/**", "/js/**", "/img/**", "/webjars/**").permitAll()
                 .requestMatchers("/login", "/auth/**").permitAll()
-                .requestMatchers("/admin/**").hasAnyRole("Admin", "Vendedor", "Almacen", "Gestor")
+                .requestMatchers("/admin/**").hasRole("Admin")
                 .requestMatchers("/client/**").hasRole("Cliente")
                 .anyRequest().authenticated()
             )
@@ -61,42 +48,25 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthenticationSuccessHandler authenticationSuccessHandler() {
-        return (request, response, authentication) -> {
-            Set<String> roles = authentication.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .collect(Collectors.toSet());
-
-            if (roles.contains("ROLE_Cliente")) {
-                response.sendRedirect("/client/dashboard");
-            } else {
-                response.sendRedirect("/admin/dashboard");
-            }
-        };
-    }
-
-    @Bean
-    public WebSecurityCustomizer webSecurityCustomizer() {
-        return (web) -> web.ignoring().requestMatchers(
-            "/static/**",
-            "/plugins/**",
-            "/dist/**",
-            "/css/**",
-            "/js/**",
-            "/img/**",
-            "/webjars/**"
-        );
-    }
-
-    @Bean
-    public AuthenticationManager authenticationManager(
-        AuthenticationConfiguration authConfig
-    ) throws Exception {
-        return authConfig.getAuthenticationManager();
-    }
-
-    @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+        return authenticationConfiguration.getAuthenticationManager();
+    }
+
+    @Bean
+    public AuthenticationSuccessHandler authenticationSuccessHandler() {
+        return (request, response, authentication) -> {
+            if (authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_Admin"))) {
+                response.sendRedirect("/admin/dashboard");
+            } else if (authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_Cliente"))) {
+                response.sendRedirect("/client/dashboard");
+            } else {
+                response.sendRedirect("/login");
+            }
+        };
     }
 }

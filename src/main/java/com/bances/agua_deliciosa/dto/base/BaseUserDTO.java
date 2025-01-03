@@ -1,40 +1,64 @@
 package com.bances.agua_deliciosa.dto.base;
 
+import java.time.LocalDate;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Past;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.beans.factory.InitializingBean;
 
 @Getter
 @Setter
-public abstract class BaseUserDTO extends BaseDTO {
+public class BaseUserDTO implements InitializingBean {
+    private Long id;
     
     @NotBlank(message = "El nombre es requerido")
-    @Size(min = 2, max = 50, message = "El nombre debe tener entre 2 y 50 caracteres")
     private String name;
     
     @NotBlank(message = "El apellido es requerido")
-    @Size(min = 2, max = 50, message = "El apellido debe tener entre 2 y 50 caracteres")
     private String lastName;
     
+    @Email(message = "Debe ingresar un email válido")
     @NotBlank(message = "El email es requerido")
-    @Email(message = "El email debe ser válido")
     private String email;
     
     @NotBlank(message = "El número de documento es requerido")
-    @Pattern(regexp = "\\d{8,11}", message = "El número de documento debe tener entre 8 y 11 dígitos")
+    @Pattern(regexp = "\\d{8}", message = "El DNI debe tener 8 dígitos")
     private String documentNumber;
     
-    @Pattern(regexp = "\\d{9}", message = "El número de teléfono debe tener 9 dígitos")
+    @NotBlank(message = "El teléfono es requerido")
+    @Pattern(regexp = "\\d{9}", message = "El teléfono debe tener 9 dígitos")
     private String phoneNumber;
     
-    @Size(min = 6, message = "La contraseña debe tener al menos 6 caracteres")
+    // Validación condicional para la contraseña
+    @Size(min = 6, message = "La contraseña debe tener al menos 6 caracteres", groups = OnCreate.class)
     private String password;
     
-    // Métodos helper
-    public String getFullName() {
-        return name + " " + lastName;
+    private Boolean active;
+    
+    @NotNull(message = "La fecha de nacimiento es requerida")
+    @Past(message = "La fecha debe ser en el pasado")
+    private LocalDate birthDate;
+    
+    @NotBlank(message = "El género es requerido")
+    private String gender;
+    
+    // Para la relación uno a uno con role
+    @NotNull(message = "Debe seleccionar un rol")
+    private Long roleId;
+    
+    private String userableType;
+    private Long userableId;
+    
+    // Interfaz para validación en creación
+    public interface OnCreate {}
+
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        // Este método será sobreescrito por las clases hijas si necesitan inicializar algo
     }
-} 
+}

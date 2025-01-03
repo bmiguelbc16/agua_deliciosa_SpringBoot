@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+    <div th:fragment="searchForm">
+        <div class="input-group">
+            <input type="text" 
+                   id="searchInput"
+                   name="search"
+                   class="form-control" 
+                   placeholder="Buscar por DNI, nombre o apellido...">
+            <div class="input-group-append">
+                <button type="button" id="searchButton" class="btn btn-primary">
+                    <i class="fas fa-search"></i> Buscar
+                </button>
+                <a th:href="@{/admin/clients}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Limpiar
+                </a>
+            </div>
+        </div>
+        <script>
+        function performSearch() {
+            var searchTerm = document.getElementById('searchInput').value;
+            fetch('/admin/clients/search', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'search=' + encodeURIComponent(searchTerm)
+            })
+            .then(response => response.text())
+            .then(html => {
+                document.querySelector('table tbody').innerHTML = 
+                    new DOMParser().parseFromString(html, 'text/html')
+                        .querySelector('tbody').innerHTML;
+            });
+        }
+
+        document.getElementById('searchButton').addEventListener('click', performSearch);
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                performSearch();
+            }
+        });
+        </script>
+    </div>
+</body>
+</html> 

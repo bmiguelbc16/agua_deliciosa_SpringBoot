@@ -1,27 +1,40 @@
 package com.bances.agua_deliciosa.model;
 
-import com.bances.agua_deliciosa.model.base.BaseEntity;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "orders")
-@Getter
-@Setter
-public class Order extends BaseEntity {
+@Data
+public class Order {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
     
-    @Column(name = "client_id", nullable = false)
-    private Long clientId;
+    @ManyToOne
+    @JoinColumn(name = "client_id")
+    private Client client;
     
-    @Column(nullable = false)
-    private Integer quantity;
+    @Column(name = "order_date")
+    private LocalDateTime orderDate;
     
-    @Column(name = "delivery_date", nullable = false)
-    private LocalDateTime deliveryDate;
+    private String status;
     
-    private String address;
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
     
-    private String notes;
-} 
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+    
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
+    
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
+}

@@ -19,6 +19,8 @@ public final class Routes {
         public static final String PREFIX = "/admin";
         public static final String DASHBOARD = PREFIX + "/dashboard";
         public static final String EMPLOYEES = PREFIX + "/employees";
+        public static final String EMPLOYEES_CREATE = EMPLOYEES + "/create";
+        public static final String EMPLOYEES_EDIT = EMPLOYEES + "/edit/{id}";
         public static final String EMPLOYEES_ALL = EMPLOYEES + "/**";  // Para seguridad
         public static final String CLIENTS = PREFIX + "/clients";
         public static final String CLIENTS_ALL = CLIENTS + "/**";      // Para seguridad

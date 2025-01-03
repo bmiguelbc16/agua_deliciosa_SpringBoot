@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+</head>
+<body>
+    <div th:fragment="content">
+        <!-- Content Header -->
+        <div class="content-header">
+            <div class="container-fluid">
+                <div class="row mb-2">
+                    <div class="col-sm-6">
+                        <h1 class="m-0">Dashboard</h1>
+                    </div>
+                    <div class="col-sm-6">
+                        <ol class="breadcrumb float-sm-right">
+                            <li class="breadcrumb-item"><a href="#">Inicio</a></li>
+                            <li class="breadcrumb-item active">Dashboard</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main content -->
+        <section class="content">
+            <div class="container-fluid">
+                <!-- Info boxes -->
+                <div class="row">
+                    <div class="col-12 col-sm-6 col-md-3">
+                        <div class="info-box">
+                            <span class="info-box-icon bg-info elevation-1">
+                                <i class="fas fa-users"></i>
+                            </span>
+                            <div class="info-box-content">
+                                <span class="info-box-text">Clientes</span>
+                                <span class="info-box-number" th:text="${stats?.clientCount ?: '0'}">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-sm-6 col-md-3">
+                        <div class="info-box mb-3">
+                            <span class="info-box-icon bg-success elevation-1">
+                                <i class="fas fa-shopping-cart"></i>
+                            </span>
+                            <div class="info-box-content">
+                                <span class="info-box-text">Pedidos</span>
+                                <span class="info-box-number" th:text="${stats?.orderCount ?: '0'}">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-sm-6 col-md-3">
+                        <div class="info-box mb-3">
+                            <span class="info-box-icon bg-warning elevation-1">
+                                <i class="fas fa-box"></i>
+                            </span>
+                            <div class="info-box-content">
+                                <span class="info-box-text">Productos</span>
+                                <span class="info-box-number" th:text="${stats?.productCount ?: '0'}">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-sm-6 col-md-3">
+                        <div class="info-box mb-3">
+                            <span class="info-box-icon bg-danger elevation-1">
+                                <i class="fas fa-user-tie"></i>
+                            </span>
+                            <div class="info-box-content">
+                                <span class="info-box-text">Empleados</span>
+                                <span class="info-box-number" th:text="${stats?.employeeCount ?: '0'}">0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main row -->
+                <div class="row">
+                    <!-- Left col -->
+                    <div class="col-md-8">
+                        <!-- MAP & BOX PANE -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">
+                                    <i class="fas fa-chart-bar mr-1"></i>
+                                    Ventas Mensuales
+                                </h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart">
+                                    <canvas id="salesChart" style="min-height: 250px; height: 250px; max-height: 250px; max-width: 100%;"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- TABLE -->
+                        <div class="card">
+                            <div class="card-header border-transparent">
+                                <h3 class="card-title">Últimos Pedidos</h3>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table m-0">
+                                        <thead>
+                                            <tr>
+                                                <th>ID Pedido</th>
+                                                <th>Cliente</th>
+                                                <th>Estado</th>
+                                                <th>Total</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td><a href="#">OR9842</a></td>
+                                                <td>Juan Pérez</td>
+                                                <td><span class="badge badge-success">Entregado</span></td>
+                                                <td>S/. 24.00</td>
+                                            </tr>
+                                            <!-- Más filas de ejemplo -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right col -->
+                    <div class="col-md-4">
+                        <!-- Info Boxes Style 2 -->
+                        <div class="info-box mb-3 bg-info">
+                            <span class="info-box-icon"><i class="fas fa-money-bill"></i></span>
+                            <div class="info-box-content">
+                                <span class="info-box-text">Ingresos del Mes</span>
+                                <span class="info-box-number">S/. 5,200</span>
+                            </div>
+                        </div>
+
+                        <!-- PRODUCT LIST -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">Productos Más Vendidos</h3>
+                            </div>
+                            <div class="card-body p-0">
+                                <ul class="products-list product-list-in-card pl-2 pr-2">
+                                    <li class="item">
+                                        <div class="product-info">
+                                            <a href="javascript:void(0)" class="product-title">
+                                                Bidón de Agua 20L
+                                                <span class="badge badge-info float-right">S/. 15.00</span>
+                                            </a>
+                                            <span class="product-description">
+                                                Agua purificada en bidón retornable
+                                            </span>
+                                        </div>
+                                    </li>
+                                    <!-- Más productos -->
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Scripts específicos para el dashboard -->
+    <script th:src="@{/plugins/chart.js/Chart.min.js}"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Gráfico de ventas
+        var ctx = document.getElementById('salesChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio'],
+                datasets: [{
+                    label: 'Ventas Mensuales',
+                    data: [65, 59, 80, 81, 56, 55],
+                    backgroundColor: 'rgba(60,141,188,0.9)',
+                    borderColor: 'rgba(60,141,188,0.8)',
+                    pointRadius: false,
+                    pointColor: '#3b8bba',
+                    pointStrokeColor: 'rgba(60,141,188,1)',
+                    pointHighlightFill: '#fff',
+                    pointHighlightStroke: 'rgba(60,141,188,1)',
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    yAxes: [{
+                        ticks: {
+                            beginAtZero: true
+                        }
+                    }]
+                }
+            }
+        });
+    });
+    </script>
+
+    <style>
+        .info-box {
+            transition: transform 0.3s ease;
+        }
+        .info-box:hover {
+            transform: translateY(-5px);
+        }
+        .products-list .product-info {
+            margin-left: 0;
+        }
+        .card {
+            box-shadow: 0 0 1px rgba(0,0,0,.125), 0 1px 3px rgba(0,0,0,.2);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            box-shadow: 0 0 3px rgba(0,0,0,.125), 0 3px 6px rgba(0,0,0,.2);
+        }
+        .info-box-icon {
+            transition: all 0.3s ease;
+        }
+        .info-box:hover .info-box-icon {
+            transform: scale(1.1);
+        }
+        .badge {
+            transition: all 0.3s ease;
+        }
+        .badge:hover {
+            transform: scale(1.1);
+        }
+    </style>
+</body>
+</html>

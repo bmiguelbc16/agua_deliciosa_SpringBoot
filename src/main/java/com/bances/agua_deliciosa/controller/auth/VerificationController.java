@@ -1,36 +1,20 @@
 package com.bances.agua_deliciosa.controller.auth;
 
-import org.springframework.stereotype.Controller;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import com.bances.agua_deliciosa.controller.base.BaseController;
 import com.bances.agua_deliciosa.service.auth.AuthenticationService;
 import lombok.RequiredArgsConstructor;
 
-@Controller
-@RequestMapping("/auth/email")
+@RestController
+@RequestMapping("/api/v1/auth/verify")
 @RequiredArgsConstructor
-public class VerificationController extends BaseController {
+public class VerificationController {
     
-    private final AuthenticationService authService;
+    private final AuthenticationService authenticationService;
     
-    @GetMapping("/verify/{userId}/{token}")
-    public String verifyEmail(
-        @PathVariable Long userId,
-        @PathVariable String token,
-        RedirectAttributes redirectAttributes
-    ) {
-        try {
-            authService.verifyEmail(userId, token);
-            addSuccessMessage(redirectAttributes, "Email verificado exitosamente");
-        } catch (Exception e) {
-            addErrorMessage(redirectAttributes, e.getMessage());
-        }
-        return "redirect:/auth/login";
+    @PostMapping("/{userId}")
+    public ResponseEntity<Void> verifyEmail(@PathVariable Long userId) {
+        authenticationService.verifyEmail(userId);
+        return ResponseEntity.ok().build();
     }
-    
-    @Override
-    protected String getViewPrefix() {
-        return "auth";
-    }
-} 
+}

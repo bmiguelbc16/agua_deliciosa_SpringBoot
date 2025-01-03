@@ -13,14 +13,13 @@
 </head>
 <body class="hold-transition login-page">
     <div class="login-box">
-        <!-- /.login-logo -->
         <div class="card card-outline card-primary">
             <div class="card-header text-center">
                 <a href="#" class="h1"><b>Agua</b> Deliciosa</a>
             </div>
             <div class="card-body">
                 <p class="login-box-msg">Iniciar sesión en el sistema</p>
-                
+
                 <div th:if="${param.error}" class="alert alert-danger alert-dismissible">
                     <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
                     <h5><i class="icon fas fa-ban"></i> Error!</h5>
@@ -38,7 +37,7 @@
                                name="email" 
                                class="form-control" 
                                placeholder="Email" 
-                               value="admin@example.com"
+                               value="admin@sistema.com"
                                required>
                         <div class="input-group-append">
                             <div class="input-group-text">
@@ -51,7 +50,7 @@
                                name="password" 
                                class="form-control" 
                                placeholder="Contraseña" 
-                               value="password"	
+                               value="password"
                                required>
                         <div class="input-group-append">
                             <div class="input-group-text">
@@ -81,4 +80,4 @@
     <script th:src="@{/plugins/bootstrap/js/bootstrap.bundle.min.js}"></script>
     <script th:src="@{/dist/js/adminlte.min.js}"></script>
 </body>
-</html> 
+</html>

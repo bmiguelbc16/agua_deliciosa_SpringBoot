@@ -1,7 +1,18 @@
 package com.bances.agua_deliciosa.model;
 
-import com.bances.agua_deliciosa.model.base.BaseEntity;
-import jakarta.persistence.*;
+import java.time.LocalDateTime;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
+import jakarta.persistence.JoinColumn;
+import org.hibernate.annotations.JoinFormula;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -9,24 +20,32 @@ import lombok.Setter;
 @Table(name = "clients")
 @Getter
 @Setter
-public class Client extends BaseEntity {
-    
-    @Column
-    private String address;
-    
-    @Column
-    private String reference;
-    
-    @Column
-    private Double latitude;
-    
-    @Column
-    private Double longitude;
-    
-    @Enumerated(EnumType.STRING)
+public class Client {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
     @Column(nullable = false)
-    private Gender gender;
+    private LocalDateTime createdAt;
+
+    @Column(nullable = false)
+    private LocalDateTime updatedAt;
     
-    @OneToOne(mappedBy = "client")
+    @OneToOne
+    @JoinColumn(name = "id", referencedColumnName = "userable_id", insertable = false, updatable = false)
+    @JoinFormula("userable_type = 'Client'")
     private User user;
-} 
+
+    @PrePersist
+    public void prePersist() {
+        LocalDateTime now = LocalDateTime.now();
+        this.createdAt = now;
+        this.updatedAt = now;
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
+}

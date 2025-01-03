@@ -5,6 +5,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import com.bances.agua_deliciosa.controller.base.BaseController;
 import com.bances.agua_deliciosa.service.auth.SecurityService;
 import lombok.extern.slf4j.Slf4j;
+import com.bances.agua_deliciosa.model.User;
 
 @Slf4j
 @PreAuthorize("hasRole('ADMIN')")
@@ -22,7 +23,15 @@ public abstract class AdminController extends BaseController {
     }
     
     protected void setupCommonAttributes(Model model) {
-        model.addAttribute("currentUser", securityService.getCurrentUser());
+        User currentUser = securityService.getCurrentUser();
+        if (currentUser == null) {
+            User defaultUser = new User();
+            defaultUser.setName("Usuario");
+            defaultUser.setEmail("usuario@example.com");
+            model.addAttribute("currentUser", defaultUser);
+        } else {
+            model.addAttribute("currentUser", currentUser);
+        }
         model.addAttribute("isAdmin", true);
         model.addAttribute("menuActive", getMenuActive());
     }

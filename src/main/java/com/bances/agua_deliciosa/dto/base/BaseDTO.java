@@ -7,11 +7,11 @@ import java.io.Serializable;
 @Getter
 @Setter
 public abstract class BaseDTO implements Serializable {
-    protected Long id;
-    protected boolean active = true;
-    
+    private Long id;
+    private boolean active = true;
+
     // Métodos comunes para todos los DTOs
     public boolean isNew() {
         return id == null;
     }
-} 
+}

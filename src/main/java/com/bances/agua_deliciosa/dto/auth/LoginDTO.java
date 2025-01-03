@@ -1,18 +1,15 @@
 package com.bances.agua_deliciosa.dto.auth;
 
 import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import lombok.Getter;
-import lombok.Setter;
+import jakarta.validation.constraints.NotEmpty;
+import lombok.Data;
 
-@Getter
-@Setter
+@Data
 public class LoginDTO {
-    
-    @NotBlank(message = "El email es requerido")
-    @Email(message = "Email inválido")
+    @Email(message = "El correo debe ser válido")
+    @NotEmpty(message = "El correo es obligatorio")
     private String email;
-    
-    @NotBlank(message = "La contraseña es requerida")
+
+    @NotEmpty(message = "La contraseña es obligatoria")
     private String password;
-} 
+}
