@@ -4,49 +4,44 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import jakarta.validation.Valid;
-import com.bances.agua_deliciosa.dto.admin.ProfileDTO;
-import com.bances.agua_deliciosa.service.core.ProfileService;
-import com.bances.agua_deliciosa.service.auth.SecurityService;
 
-@Controller("adminProfileController")
-@RequestMapping("/admin/profile")
+import com.bances.agua_deliciosa.util.Routes;
+import com.bances.agua_deliciosa.dto.admin.ProfileDTO;
+import com.bances.agua_deliciosa.service.auth.SecurityService;
+import com.bances.agua_deliciosa.service.core.UserService;
+
+import jakarta.validation.Valid;
+
+@Controller
+@RequestMapping(Routes.Admin.PROFILE)
 public class ProfileController extends AdminController {
     
-    private final ProfileService profileService;
+    private final UserService userService;
     
-    public ProfileController(
-        SecurityService securityService,
-        ProfileService profileService
-    ) {
+    public ProfileController(SecurityService securityService, UserService userService) {
         super(securityService);
-        this.profileService = profileService;
+        this.userService = userService;
     }
-    
+
     @GetMapping
-    public String show(Model model) {
-        setupCommonAttributes(model);
-        model.addAttribute("pageTitle", "Mi Perfil");
-        model.addAttribute("profile", profileService.getCurrentUserProfile());
-        return getAdminView("profile/form");
+    public String index(Model model) {
+        setupCommonAttributes(model, "profile");
+        model.addAttribute("title", "Mi Perfil");
+        model.addAttribute("user", userService.getCurrentUserProfile());
+        return view("profile/index");
     }
-    
+
     @PostMapping("/update")
     public String update(
-        @Valid @ModelAttribute("profile") ProfileDTO dto,
+        @Valid @ModelAttribute("user") ProfileDTO dto,
         RedirectAttributes redirectAttributes
     ) {
         try {
-            profileService.updateProfile(dto);
+            userService.updateProfile(dto);
             addSuccessMessage(redirectAttributes, "Perfil actualizado exitosamente");
         } catch (Exception e) {
-            addErrorMessage(redirectAttributes, e.getMessage());
+            addErrorMessage(redirectAttributes, "Error al actualizar el perfil: " + e.getMessage());
         }
-        return "redirect:/admin/profile";
+        return redirect("");
     }
-    
-    @Override
-    protected String getMenuActive() {
-        return "profile";
-    }
-} 
+}

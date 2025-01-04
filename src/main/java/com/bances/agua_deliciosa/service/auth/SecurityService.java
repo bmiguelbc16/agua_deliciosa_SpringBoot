@@ -8,20 +8,31 @@ import com.bances.agua_deliciosa.model.User;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.AuthenticationException;
+import com.bances.agua_deliciosa.repository.UserRepository;
 
 @Service
 @Slf4j
 public class SecurityService {
     
+    @Autowired
+    private AuthenticationService authenticationService;
+    
+    @Autowired
+    private UserRepository userRepository;
+    
+    public Authentication getCurrentAuthentication() {
+        return SecurityContextHolder.getContext().getAuthentication();
+    }
+    
     public User getCurrentUser() {
         try {
-            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            Authentication auth = getCurrentAuthentication();
             if (auth != null && auth.getPrincipal() instanceof UserDetails) {
                 UserDetails userDetails = (UserDetails) auth.getPrincipal();
-                User user = new User();
-                user.setName(userDetails.getUsername());
-                user.setEmail(userDetails.getUsername());
-                return user;
+                return userRepository.findByEmail(userDetails.getUsername())
+                    .orElse(null);
             }
             return null;
         } catch (Exception e) {
@@ -31,13 +42,13 @@ public class SecurityService {
     }
     
     public boolean hasRole(String role) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        Authentication auth = getCurrentAuthentication();
         return auth != null && auth.getAuthorities().stream()
             .anyMatch(a -> a.getAuthority().equals("ROLE_" + role.toUpperCase()));
     }
     
     public boolean hasAnyRole(String... roles) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        Authentication auth = getCurrentAuthentication();
         if (auth == null) return false;
         
         Set<String> userRoles = auth.getAuthorities().stream()
@@ -53,7 +64,7 @@ public class SecurityService {
     }
     
     public boolean isAuthenticated() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        Authentication auth = getCurrentAuthentication();
         return auth != null && auth.isAuthenticated();
     }
     
@@ -75,12 +86,31 @@ public class SecurityService {
                currentUser.getUserableId().equals(resourceId);
     }
     
+    public boolean isEmailVerified(String email) {
+        try {
+            return userRepository.findByEmail(email)
+                .map(user -> user.getEmailVerifiedAt() != null)
+                .orElse(false);
+        } catch (Exception e) {
+            log.error("Error checking email verification status", e);
+            return false;
+        }
+    }
+    
     public Set<String> getCurrentUserRoles() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        Authentication auth = getCurrentAuthentication();
         if (auth == null) return Set.of();
         
         return auth.getAuthorities().stream()
             .map(ga -> ga.getAuthority().replace("ROLE_", ""))
             .collect(Collectors.toSet());
+    }
+    
+    public Authentication authenticate(String email, String password) {
+        try {
+            return authenticationService.authenticate(email, password);
+        } catch (AuthenticationException e) {
+            throw new RuntimeException("Error de autenticación: " + e.getMessage());
+        }
     }
 }

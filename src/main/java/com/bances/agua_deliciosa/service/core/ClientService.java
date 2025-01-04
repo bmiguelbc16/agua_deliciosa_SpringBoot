@@ -14,6 +14,7 @@ import com.bances.agua_deliciosa.repository.ClientRepository;
 import com.bances.agua_deliciosa.repository.UserRepository;
 import com.bances.agua_deliciosa.repository.RoleRepository;
 import com.bances.agua_deliciosa.model.Role;
+import com.bances.agua_deliciosa.model.Gender;
 
 import lombok.RequiredArgsConstructor;
 
@@ -93,11 +94,11 @@ public class ClientService {
         user.setName(dto.getName());
         user.setLastName(dto.getLastName());
         user.setEmail(dto.getEmail());
-        user.setDocumentNumber(dto.getDocumentNumber());
         user.setPhoneNumber(dto.getPhoneNumber());
+        user.setDocumentNumber(dto.getDocumentNumber());
+        user.setGender(Gender.valueOf(dto.getGender()));
         user.setBirthDate(dto.getBirthDate());
-        user.setGender(dto.getGender());
-        user.setActive(dto.getActive());
+        user.setActive(true);
         
         // El rol se establece automáticamente en el DTO
         if (dto.getRoleId() != null) {
@@ -109,5 +110,9 @@ public class ClientService {
 
     public Page<Client> getClientsPage(Pageable pageable) {
         return clientRepository.findAll(pageable);
+    }
+
+    public long getClientCount() {
+        return clientRepository.count();
     }
 }

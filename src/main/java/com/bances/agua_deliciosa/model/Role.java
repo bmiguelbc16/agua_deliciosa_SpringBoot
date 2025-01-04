@@ -27,6 +27,9 @@ public class Role {
     private String guardName = "web";  // Valor por defecto
 
     @Column(nullable = false)
+    private boolean active = true;
+
+    @Column(nullable = false)
     private LocalDateTime createdAt;
 
     @Column(nullable = false)
@@ -40,6 +43,15 @@ public class Role {
             inverseJoinColumns = @JoinColumn(name = "permission_id") // Columna para los permisos
     )
     private Set<Permission> permissions;
+
+    public Role() {}
+
+    public Role(String name, String description) {
+        this.name = name;
+        this.description = description;
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+    }
 
     @PrePersist
     public void prePersist() {

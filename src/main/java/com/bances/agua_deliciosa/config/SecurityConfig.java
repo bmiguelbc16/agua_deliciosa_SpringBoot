@@ -5,26 +5,37 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+
+import com.bances.agua_deliciosa.repository.UserRepository;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
+    private final UserRepository userRepository;
+
+    public SecurityConfig(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        return http
+        http
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/static/**", "/plugins/**", "/dist/**", "/css/**", "/js/**", "/img/**", "/webjars/**").permitAll()
-                .requestMatchers("/login", "/auth/**").permitAll()
-                .requestMatchers("/admin/**").hasRole("Admin")
-                .requestMatchers("/client/**").hasRole("Cliente")
+                .requestMatchers("/webjars/**", "/plugins/**", "/dist/**", "/css/**", "/js/**", "/images/**", "/assets/**").permitAll()
+                .requestMatchers("/login", "/auth/login", "/error", "/register", "/forgot-password").permitAll()
+                .requestMatchers("/admin/**").hasAuthority("Admin")
+                .requestMatchers("/client/**").hasAuthority("Cliente")
                 .anyRequest().authenticated()
             )
             .formLogin(form -> form
@@ -32,19 +43,18 @@ public class SecurityConfig {
                 .loginProcessingUrl("/auth/login")
                 .usernameParameter("email")
                 .passwordParameter("password")
-                .successHandler(authenticationSuccessHandler())
+                .defaultSuccessUrl("/admin/dashboard")
                 .failureUrl("/login?error")
                 .permitAll()
             )
             .logout(logout -> logout
-                .logoutUrl("/auth/logout")
+                .logoutUrl("/logout")
+                .logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
                 .logoutSuccessUrl("/login?logout")
                 .permitAll()
-            )
-            .exceptionHandling(ex -> ex
-                .accessDeniedPage("/error/403")
-            )
-            .build();
+            );
+
+        return http.build();
     }
 
     @Bean
@@ -53,20 +63,26 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
-        return authenticationConfiguration.getAuthenticationManager();
+    public AuthenticationSuccessHandler authenticationSuccessHandler() {
+        SavedRequestAwareAuthenticationSuccessHandler successHandler = new SavedRequestAwareAuthenticationSuccessHandler();
+        successHandler.setDefaultTargetUrl("/admin/dashboard");
+        successHandler.setAlwaysUseDefaultTargetUrl(false);
+        return successHandler;
     }
 
     @Bean
-    public AuthenticationSuccessHandler authenticationSuccessHandler() {
-        return (request, response, authentication) -> {
-            if (authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_Admin"))) {
-                response.sendRedirect("/admin/dashboard");
-            } else if (authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_Cliente"))) {
-                response.sendRedirect("/client/dashboard");
-            } else {
-                response.sendRedirect("/login");
-            }
-        };
+    public UserDetailsService userDetailsService() {
+        return username -> userRepository.findByEmail(username)
+            .map(user -> User.builder()
+                .username(user.getEmail())
+                .password(user.getPassword())
+                .authorities(user.getRole().getName())
+                .build())
+            .orElseThrow(() -> new RuntimeException("Usuario no encontrado: " + username));
+    }
+
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
+        return authConfig.getAuthenticationManager();
     }
 }

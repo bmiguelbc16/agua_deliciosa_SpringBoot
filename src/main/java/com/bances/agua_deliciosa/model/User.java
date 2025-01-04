@@ -21,11 +21,17 @@ import jakarta.persistence.FetchType;
 import org.hibernate.annotations.JoinFormula;
 import jakarta.persistence.ForeignKey;
 import jakarta.persistence.ConstraintMode;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
 
 @Entity
 @Table(name = "users")
 @Data
 public class User {
+
+    // Constantes para userableType
+    public static final String TYPE_EMPLOYEE = "Employee";
+    public static final String TYPE_CLIENT = "Client";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -46,7 +52,8 @@ public class User {
     private LocalDate birthDate;
 
     @Column(name = "gender", nullable = false)
-    private String gender; // 'M', 'F', 'O'
+    @Enumerated(EnumType.STRING)
+    private Gender gender;
 
     @Column(name = "phone_number")
     private String phoneNumber;
@@ -57,7 +64,7 @@ public class User {
     @Column(name = "email_verified_at")
     private LocalDateTime emailVerifiedAt;
 
-    @Column(name = "userable_type")
+    @Column(name = "userable_type", columnDefinition = "ENUM('Employee', 'Client')")
     private String userableType;
 
     @Column(name = "userable_id")

@@ -27,6 +27,9 @@ public class Permission {
     private String guardName = "web";  // Valor por defecto para el guard
 
     @Column(nullable = false)
+    private boolean active = true;
+
+    @Column(nullable = false)
     private LocalDateTime createdAt;
 
     @Column(nullable = false)

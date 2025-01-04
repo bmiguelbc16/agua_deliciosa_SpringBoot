@@ -1,118 +1,84 @@
-<!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org"
-      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
-<aside class="main-sidebar sidebar-light-primary elevation-4" th:fragment="sidebar">
+<!-- Main Sidebar Container -->
+<aside class="main-sidebar sidebar-dark-primary elevation-4" th:fragment="sidebar">
     <!-- Brand Logo -->
-    <a th:href="@{/admin/dashboard}" class="brand-link bg-primary">
-        <i class="fas fa-tint text-white brand-image ml-3"></i>
-        <span class="brand-text text-white">Agua Deliciosa</span>
+    <a th:href="@{/admin/dashboard}" class="brand-link text-center">
+        <img th:src="@{/dist/img/AdminLTELogo.png}" alt="AdminLTE Logo" class="brand-image img-circle elevation-3">
+        <span class="brand-text font-weight-light">Agua Deliciosa</span>
     </a>
 
     <!-- Sidebar -->
     <div class="sidebar">
         <!-- Sidebar Menu -->
         <nav class="mt-2">
-            <ul class="nav nav-pills nav-sidebar flex-column nav-child-indent nav-collapse-hide-child" data-widget="treeview" role="menu" data-accordion="false">
+            <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
                 <!-- Dashboard -->
                 <li class="nav-item">
-                    <a th:href="@{/admin/dashboard}" 
-                       class="nav-link" 
-                       th:classappend="${menuActive == 'dashboard'} ? 'active'">
-                        <i class="nav-icon fas fa-tachometer-alt text-primary"></i>
+                    <a th:href="@{/admin/dashboard}" class="nav-link" th:classappend="${menuActive == 'dashboard'} ? 'active'">
+                        <i class="nav-icon fas fa-tachometer-alt"></i>
                         <p>Dashboard</p>
                     </a>
                 </li>
 
-                <li class="nav-header bg-light">ADMINISTRACIÓN</li>
-
-                <!-- Gestión -->
-                <li class="nav-item" th:classappend="${menuActive == 'employees' or menuActive == 'clients' or menuActive == 'products'} ? 'menu-is-opening menu-open'">
-                    <a href="#" class="nav-link" 
-                       th:classappend="${menuActive == 'employees' or menuActive == 'clients' or menuActive == 'products'} ? 'active'">
-                        <i class="nav-icon fas fa-cogs text-warning"></i>
+                <!-- Usuarios -->
+                <li class="nav-item" th:classappend="${menuActive == 'users'} ? 'menu-open'">
+                    <a href="#" class="nav-link" th:classappend="${menuActive == 'users'} ? 'active'">
+                        <i class="nav-icon fas fa-users"></i>
                         <p>
-                            Gestión
-                            <i class="fas fa-angle-left right"></i>
-                            <span class="badge bg-warning right">3</span>
+                            Usuarios
+                            <i class="right fas fa-angle-left"></i>
                         </p>
                     </a>
                     <ul class="nav nav-treeview">
                         <li class="nav-item">
-                            <a th:href="@{/admin/employees}" 
-                               class="nav-link" 
-                               th:classappend="${menuActive == 'employees'} ? 'active'">
-                                <i class="fas fa-user-tie nav-icon text-primary"></i>
-                                <p>
-                                    Empleados
-                                    <span class="badge bg-primary right" 
-                                          th:with="count=${@employeeService.getEmployeeCount()}"
-                                          th:text="${count > 999 ? '999+' : count}">0</span>
-                                </p>
+                            <a th:href="@{/admin/employees}" class="nav-link" th:classappend="${submenuActive == 'employees'} ? 'active'">
+                                <i class="nav-icon fas fa-user-tie"></i>
+                                <p>Empleados</p>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a th:href="@{/admin/clients}" 
-                               class="nav-link" 
-                               th:classappend="${menuActive == 'clients'} ? 'active'">
-                                <i class="fas fa-users nav-icon text-success"></i>
-                                <p>
-                                    Clientes
-                                    <span class="badge bg-success right" 
-                                          th:with="count=${@clientService.getClientCount()}"
-                                          th:text="${count > 999 ? '999+' : count}">0</span>
-                                </p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a th:href="@{/admin/products}" 
-                               class="nav-link" 
-                               th:classappend="${menuActive == 'products'} ? 'active'">
-                                <i class="fas fa-box nav-icon text-info"></i>
-                                <p>Productos</p>
+                            <a th:href="@{/admin/clients}" class="nav-link" th:classappend="${submenuActive == 'clients'} ? 'active'">
+                                <i class="nav-icon fas fa-user-friends"></i>
+                                <p>Clientes</p>
                             </a>
                         </li>
                     </ul>
                 </li>
 
-                <!-- Pedidos -->
+                <!-- Productos -->
                 <li class="nav-item">
-                    <a th:href="@{/admin/orders}" 
-                       class="nav-link" 
-                       th:classappend="${menuActive == 'orders'} ? 'active'">
-                        <i class="nav-icon fas fa-shopping-cart text-danger"></i>
-                        <p>
-                            Pedidos
-                            <span class="badge bg-danger right">New</span>
-                        </p>
+                    <a th:href="@{/admin/products}" class="nav-link" th:classappend="${menuActive == 'products'} ? 'active'">
+                        <i class="nav-icon fas fa-box"></i>
+                        <p>Productos</p>
                     </a>
                 </li>
 
-                <li class="nav-header bg-light">CONFIGURACIÓN</li>
+                <!-- Pedidos -->
+                <li class="nav-item">
+                    <a th:href="@{/admin/orders}" class="nav-link" th:classappend="${menuActive == 'orders'} ? 'active'">
+                        <i class="nav-icon fas fa-shopping-cart"></i>
+                        <p>Pedidos</p>
+                    </a>
+                </li>
 
-                <!-- Sistema -->
-                <li class="nav-item" th:classappend="${menuActive == 'roles' or menuActive == 'permissions'} ? 'menu-is-opening menu-open'">
-                    <a href="#" class="nav-link"
-                       th:classappend="${menuActive == 'roles' or menuActive == 'permissions'} ? 'active'">
-                        <i class="nav-icon fas fa-cog text-secondary"></i>
+                <!-- Configuración -->
+                <li class="nav-item" th:classappend="${menuActive == 'settings'} ? 'menu-open'">
+                    <a href="#" class="nav-link" th:classappend="${menuActive == 'settings'} ? 'active'">
+                        <i class="nav-icon fas fa-cog"></i>
                         <p>
-                            Sistema
-                            <i class="fas fa-angle-left right"></i>
+                            Configuración
+                            <i class="right fas fa-angle-left"></i>
                         </p>
                     </a>
                     <ul class="nav nav-treeview">
                         <li class="nav-item">
-                            <a th:href="@{/admin/roles}" 
-                               class="nav-link" 
-                               th:classappend="${menuActive == 'roles'} ? 'active'">
-                                <i class="fas fa-user-tag nav-icon text-purple"></i>
+                            <a th:href="@{/admin/roles}" class="nav-link" th:classappend="${submenuActive == 'roles'} ? 'active'">
+                                <i class="nav-icon fas fa-user-tag"></i>
                                 <p>Roles</p>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a th:href="@{/admin/permissions}" 
-                               class="nav-link" 
-                               th:classappend="${menuActive == 'permissions'} ? 'active'">
-                                <i class="fas fa-key nav-icon text-orange"></i>
+                            <a th:href="@{/admin/permissions}" class="nav-link" th:classappend="${submenuActive == 'permissions'} ? 'active'">
+                                <i class="nav-icon fas fa-key"></i>
                                 <p>Permisos</p>
                             </a>
                         </li>
@@ -122,4 +88,3 @@
         </nav>
     </div>
 </aside>
-</html> 

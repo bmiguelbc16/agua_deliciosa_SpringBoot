@@ -14,6 +14,7 @@ import com.bances.agua_deliciosa.model.User;
 import com.bances.agua_deliciosa.repository.EmployeeRepository;
 import com.bances.agua_deliciosa.repository.RoleRepository;
 import com.bances.agua_deliciosa.repository.UserRepository;
+import com.bances.agua_deliciosa.model.Gender;
 
 import lombok.RequiredArgsConstructor;
 
@@ -56,7 +57,7 @@ public class UserSeeder implements Seeder {
             admin.setPassword(passwordEncoder.encode("password"));
             admin.setDocumentNumber("00000000");
             admin.setBirthDate(LocalDate.of(1990, 1, 1));
-            admin.setGender("M");
+            admin.setGender(Gender.M);
             admin.setPhoneNumber("987654321");
             admin.setUserableType("Employee");
             admin.setUserableId(employee.getId());

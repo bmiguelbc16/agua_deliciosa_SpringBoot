@@ -1,0 +1,74 @@
+/* User Menu Styles */
+.navbar-nav .user-menu .dropdown-menu {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    padding: 0;
+    width: 280px;
+}
+
+.navbar-nav .user-menu .user-header {
+    height: auto;
+    padding: 10px;
+    text-align: center;
+}
+
+.navbar-nav .user-menu .user-header p {
+    margin: 0;
+    padding: 5px;
+    font-size: 17px;
+    color: #fff;
+}
+
+.navbar-nav .user-menu .user-header small {
+    display: block;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.navbar-nav .user-menu .user-footer {
+    padding: 10px;
+    background-color: #f8f9fa;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.navbar-nav .user-menu .user-footer form {
+    margin: 0;
+}
+
+.navbar-nav .user-menu .user-footer .btn {
+    color: #6c757d;
+}
+
+/* Sidebar Menu Styles */
+.sidebar-dark-primary .nav-sidebar > .nav-item > .nav-link.active {
+    background-color: #007bff;
+}
+
+.nav-sidebar .nav-treeview > .nav-item > .nav-link.active {
+    background-color: rgba(255,255,255,.1);
+}
+
+.nav-sidebar .nav-link p {
+    font-size: 14px;
+}
+
+/* Brand Logo */
+.brand-link {
+    border-bottom: 1px solid #4b545c;
+    text-align: center;
+}
+
+.brand-link .brand-image {
+    margin-right: 0.5rem;
+    margin-left: 0.5rem;
+}
+
+/* Menu Icons */
+.nav-sidebar .nav-item .nav-icon {
+    font-size: 1.1rem;
+    margin-right: 0.5rem;
+    text-align: center;
+    width: 1.6rem;
+}

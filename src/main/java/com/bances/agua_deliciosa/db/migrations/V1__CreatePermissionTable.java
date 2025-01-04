@@ -13,12 +13,14 @@ public class V1__CreatePermissionTable implements JavaMigration {
     public void migrate(Context context) throws Exception {
         try (Statement statement = context.getConnection().createStatement()) {
             // Crear tabla permissions
-            statement.execute("""
+            statement.execute(
+                """
                 CREATE TABLE permissions (
                     id BIGINT AUTO_INCREMENT PRIMARY KEY,
                     name VARCHAR(125) NOT NULL,
                     description VARCHAR(255),
                     guard_name VARCHAR(125) NOT NULL DEFAULT 'web',
+                    active BOOLEAN NOT NULL DEFAULT true,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                     UNIQUE KEY unique_permission (name, guard_name),
@@ -27,7 +29,8 @@ public class V1__CreatePermissionTable implements JavaMigration {
             """);
             
             // Crear tabla roles
-            statement.execute("""
+            statement.execute (
+                """
                 CREATE TABLE roles (
                     id BIGINT AUTO_INCREMENT PRIMARY KEY,
                     name VARCHAR(125) NOT NULL,
@@ -41,7 +44,8 @@ public class V1__CreatePermissionTable implements JavaMigration {
             """);
             
             // Tabla pivote role_has_permissions
-            statement.execute("""
+            statement.execute(
+                """
                 CREATE TABLE role_has_permissions (
                     permission_id BIGINT NOT NULL,
                     role_id BIGINT NOT NULL,

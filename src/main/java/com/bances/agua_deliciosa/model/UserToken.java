@@ -3,7 +3,6 @@ package com.bances.agua_deliciosa.model;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-
 import java.time.LocalDateTime;
 
 @Entity
@@ -29,11 +28,10 @@ public class UserToken {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    // Método de ciclo de vida de JPA
     @PrePersist
     public void prePersist() {
         LocalDateTime now = LocalDateTime.now();
         this.createdAt = now;
-        this.expiresAt = now.plusHours(1); // Asumiendo que el token dura 1 hora
+        this.expiresAt = now.plusHours(1); // El token expira en 1 hora
     }
 }

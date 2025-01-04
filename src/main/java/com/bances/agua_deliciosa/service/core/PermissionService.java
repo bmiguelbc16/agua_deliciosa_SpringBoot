@@ -6,10 +6,11 @@ import com.bances.agua_deliciosa.repository.PermissionRepository;
 import com.bances.agua_deliciosa.model.Permission;
 import com.bances.agua_deliciosa.repository.RoleRepository;
 import com.bances.agua_deliciosa.model.Role;
+import com.bances.agua_deliciosa.dto.admin.PermissionDTO;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
@@ -19,56 +20,63 @@ public class PermissionService {
     private final PermissionRepository permissionRepository;
     private final RoleRepository roleRepository;
 
-    // Obtener todos los permisos
-    public List<Permission> listAll() {
-        return permissionRepository.findAll();
+    public List<PermissionDTO> getAllPermissions() {
+        return permissionRepository.findAll().stream()
+            .map(this::toDTO)
+            .collect(Collectors.toList());
     }
 
-    // Buscar permiso por nombre
-    public Optional<Permission> findByName(String name) {
-        return permissionRepository.findByName(name);
-    }
-
-    // Obtener un permiso por su ID
-    public Permission getById(Long id) {
-        return permissionRepository.findById(id)
+    public PermissionDTO getPermissionById(Long id) {
+        Permission permission = permissionRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Permiso no encontrado con id: " + id));
+        return toDTO(permission);
     }
 
-    // Crear un nuevo permiso
     @Transactional
-    public Permission create(String name, String description) {
-        if (permissionRepository.findByName(name).isPresent()) {
-            throw new RuntimeException("El permiso ya existe: " + name);
+    public PermissionDTO createPermission(PermissionDTO dto) {
+        if (permissionRepository.findByName(dto.getName()).isPresent()) {
+            throw new RuntimeException("El permiso ya existe: " + dto.getName());
         }
 
         Permission permission = new Permission();
-        permission.setName(name);
-        permission.setDescription(description);
-        return permissionRepository.save(permission);
+        updatePermissionFromDTO(permission, dto);
+        permission = permissionRepository.save(permission);
+        return toDTO(permission);
     }
 
-    // Actualizar un permiso
     @Transactional
-    public Permission update(Long id, String name, String description) {
+    public PermissionDTO update(Long id, PermissionDTO dto) {
         Permission permission = permissionRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Permiso no encontrado con id: " + id));
         
-        permission.setName(name);
-        permission.setDescription(description);
-        return permissionRepository.save(permission);
+        updatePermissionFromDTO(permission, dto);
+        permission = permissionRepository.save(permission);
+        return toDTO(permission);
     }
 
-    // Eliminar un permiso
     @Transactional
-    public void delete(Long id) {
+    public void deletePermission(Long id) {
         Permission permission = permissionRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Permiso no encontrado con id: " + id));
         
         permissionRepository.delete(permission);
     }
 
-    // Asignar permiso a un rol
+    private void updatePermissionFromDTO(Permission permission, PermissionDTO dto) {
+        permission.setName(dto.getName());
+        permission.setDescription(dto.getDescription());
+        permission.setActive(dto.isActive());
+    }
+
+    private PermissionDTO toDTO(Permission permission) {
+        PermissionDTO dto = new PermissionDTO();
+        dto.setId(permission.getId());
+        dto.setName(permission.getName());
+        dto.setDescription(permission.getDescription());
+        dto.setActive(permission.isActive());
+        return dto;
+    }
+
     @Transactional
     public void assignPermissionToRole(Long roleId, Long permissionId) {
         Role role = roleRepository.findById(roleId)
@@ -78,6 +86,6 @@ public class PermissionService {
             .orElseThrow(() -> new RuntimeException("Permiso no encontrado con id: " + permissionId));
         
         role.getPermissions().add(permission);
-        roleRepository.save(role); // Guardar el rol con el permiso asignado
+        roleRepository.save(role);
     }
 }

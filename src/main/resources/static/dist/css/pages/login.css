@@ -1,0 +1,21 @@
+.login-box {
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.login-box-msg {
+    margin-bottom: 20px;
+}
+
+.input-group-text {
+    width: 40px;
+    justify-content: center;
+}
+
+.alert {
+    margin-bottom: 20px;
+}
+
+.icheck-primary {
+    margin-top: 8px;
+}

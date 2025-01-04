@@ -1,26 +1,26 @@
-package com.bances.agua_deliciosa.service.system;
+package com.bances.agua_deliciosa.service.notification;
 
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Value;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.bances.agua_deliciosa.service.EmailService;
 
 @Slf4j
-@Service
-public class EmailService {
+@Service("notificationEmailService")
+public class NotificationEmailService implements EmailService {
     
     private final JavaMailSender mailSender;
     private final String fromEmail;
     
-    @Autowired
-    public EmailService(JavaMailSender mailSender, @Value("${spring.mail.username}") String fromEmail) {
+    public NotificationEmailService(JavaMailSender mailSender, @Value("${spring.mail.username}") String fromEmail) {
         this.mailSender = mailSender;
         this.fromEmail = fromEmail;
     }
     
-    private void sendEmail(String to, String subject, String text) {
+    @Override
+    public void sendEmail(String to, String subject, String text) {
         log.info("Enviando email a: {} con asunto: {}", to, subject);
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(fromEmail);
@@ -30,39 +30,41 @@ public class EmailService {
         mailSender.send(message);
     }
     
+    @Override
     public void sendEmailVerifiedNotification(String to) {
         sendEmail(to, 
                  "¡Email Verificado!", 
                  "Tu email ha sido verificado exitosamente. Ya puedes acceder a todas las funcionalidades de la aplicación.");
     }
     
-    public void sendResetPasswordLink(String to) {
+    @Override
+    public void sendResetPasswordLink(String to, String resetLink) {
         sendEmail(to,
                  "Restablecer Contraseña",
                  "Has solicitado restablecer tu contraseña. Por favor, sigue este enlace para crear una nueva contraseña: "
+                 + resetLink
                  + "\n\nSi no solicitaste restablecer tu contraseña, puedes ignorar este mensaje.");
     }
     
-    public void sendWelcomeEmail(String to, String name) {
+    @Override
+    public void sendWelcomeEmail(String to, String name, String verificationLink) {
         sendEmail(to,
                  "¡Bienvenido a Agua Deliciosa!",
                  "Hola " + name + ",\n\n"
                  + "¡Bienvenido a Agua Deliciosa! Estamos encantados de tenerte con nosotros.\n\n"
                  + "Por favor, verifica tu email haciendo clic en el siguiente enlace:\n"
-                 + "\n\nSaludos,\nEl equipo de Agua Deliciosa");
+                 + verificationLink + "\n\n"
+                 + "Si tienes alguna pregunta, no dudes en contactarnos.\n\n"
+                 + "¡Gracias por confiar en nosotros!\n"
+                 + "El equipo de Agua Deliciosa");
     }
-    
-    public void sendVerificationEmail(String to, String token) {
-        sendEmail(to,
-                 "Verifica tu Email",
-                 "Por favor, verifica tu email haciendo clic en el siguiente enlace:\n"
-                 + "\n\nToken de verificación: " + token);
-    }
-    
-    public void sendPasswordResetToken(String to, String token) {
-        sendEmail(to,
-                 "Token para Restablecer Contraseña",
-                 "Has solicitado restablecer tu contraseña.\n"
-                 + "Para restablecer tu contraseña, usa este token: " + token);
+
+    @Override
+    public void sendPasswordChangedEmail(String email) {
+        sendEmail(
+            email,
+            "Contraseña Actualizada",
+            "Tu contraseña ha sido actualizada exitosamente."
+        );
     }
 }

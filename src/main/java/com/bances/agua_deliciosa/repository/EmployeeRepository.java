@@ -1,6 +1,5 @@
 package com.bances.agua_deliciosa.repository;
 
-import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -19,9 +18,9 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
             SELECT DISTINCT userable_id 
             FROM users 
             WHERE userable_type = 'Employee'
-            AND (document_number LIKE %:search% 
-                OR name LIKE %:search% 
-                OR last_name LIKE %:search%)
+            AND (document_number LIKE CONCAT('%', :search, '%') 
+                OR name LIKE CONCAT('%', :search, '%') 
+                OR last_name LIKE CONCAT('%', :search, '%'))
         ) u ON e.id = u.userable_id
     """, 
     countQuery = """
@@ -29,9 +28,9 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
         FROM employees e 
         INNER JOIN users u ON e.id = u.userable_id 
         WHERE u.userable_type = 'Employee'
-        AND (u.document_number LIKE %:search% 
-            OR u.name LIKE %:search% 
-            OR u.last_name LIKE %:search%)
+        AND (u.document_number LIKE CONCAT('%', :search, '%') 
+            OR u.name LIKE CONCAT('%', :search, '%') 
+            OR u.last_name LIKE CONCAT('%', :search, '%'))
     """,
     nativeQuery = true)
     Page<Employee> findBySearchTerm(@Param("search") String search, Pageable pageable);
@@ -51,12 +50,12 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
         FROM employees e 
         INNER JOIN users u ON e.id = u.userable_id 
         WHERE u.userable_type = 'Employee'
-    """,
+    """, 
     nativeQuery = true)
-    List<Employee> findAll();
+    Page<Employee> findAll(@NonNull Pageable pageable);
 
     @Query(value = """
-        SELECT COUNT(e.*) > 0 FROM employees e 
+        SELECT COUNT(*) > 0 FROM employees e 
         INNER JOIN users u ON e.id = u.userable_id 
         WHERE u.userable_type = 'Employee'
         AND u.document_number = :documentNumber
@@ -64,29 +63,10 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
     boolean existsByDocumentNumber(@Param("documentNumber") String documentNumber);
 
     @Query(value = """
-        SELECT COUNT(e.*) > 0 FROM employees e 
+        SELECT COUNT(*) > 0 FROM employees e 
         INNER JOIN users u ON e.id = u.userable_id 
         WHERE u.userable_type = 'Employee'
         AND u.email = :email
     """, nativeQuery = true)
     boolean existsByEmail(@Param("email") String email);
-
-    @Override
-    @NonNull
-    @Query(value = """
-        SELECT e.* FROM employees e 
-        INNER JOIN (
-            SELECT DISTINCT userable_id 
-            FROM users 
-            WHERE userable_type = 'Employee'
-        ) u ON e.id = u.userable_id
-    """, 
-    countQuery = """
-        SELECT COUNT(DISTINCT e.id) 
-        FROM employees e 
-        INNER JOIN users u ON e.id = u.userable_id 
-        WHERE u.userable_type = 'Employee'
-    """,
-    nativeQuery = true)
-    Page<Employee> findAll(@NonNull Pageable pageable);
 }

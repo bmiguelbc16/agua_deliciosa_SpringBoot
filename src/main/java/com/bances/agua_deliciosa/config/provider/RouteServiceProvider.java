@@ -25,9 +25,8 @@ public class RouteServiceProvider implements WebMvcConfigurer {
         registry.addViewController("/password/confirm").setViewName("auth/passwords/confirm");
         registry.addViewController("/password/email").setViewName("auth/passwords/email");
         
-        // Rutas de dashboard por rol
+        // Rutas de dashboard por rol (excepto admin que tiene su propio controlador)
         registry.addViewController("/dashboard").setViewName("dashboard");
-        registry.addViewController("/admin/dashboard").setViewName("admin/dashboard");
         registry.addViewController("/cliente/dashboard").setViewName("cliente/dashboard");
         registry.addViewController("/gerente/dashboard").setViewName("gerente/dashboard");
         registry.addViewController("/vendedor/dashboard").setViewName("vendedor/dashboard");
@@ -36,25 +35,28 @@ public class RouteServiceProvider implements WebMvcConfigurer {
     
     @Override
     public void addResourceHandlers(@NonNull ResourceHandlerRegistry registry) {
-        registry.addResourceHandler("/dist/**")
-                .addResourceLocations("classpath:/static/dist/")
-                .setCachePeriod(3600);
+        // Recursos de Webjars
+        registry.addResourceHandler("/webjars/**")
+                .addResourceLocations("classpath:/META-INF/resources/webjars/");
                 
-        registry.addResourceHandler("/assets/**")
-                .addResourceLocations("classpath:/static/assets/")
-                .setCachePeriod(3600);
-                
-        registry.addResourceHandler("/plugins/**")
-                .addResourceLocations("classpath:/static/plugins/")
-                .setCachePeriod(3600);
+        // Recursos estáticos específicos
+        registry.addResourceHandler("/plugins/**", "/dist/**", "/assets/**", "/css/**", "/js/**", "/images/**")
+                .addResourceLocations(
+                    "classpath:/static/plugins/",
+                    "classpath:/static/dist/",
+                    "classpath:/static/assets/",
+                    "classpath:/static/css/",
+                    "classpath:/static/js/",
+                    "classpath:/static/images/"
+                );
     }
     
     @Override
     public void addCorsMappings(@NonNull CorsRegistry registry) {
         registry.addMapping("/**")
-            .allowedOrigins("*")
-            .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-            .allowedHeaders("*")
-            .maxAge(3600);
+                .allowedOrigins("*")
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                .allowedHeaders("*")
+                .maxAge(3600);
     }
 }

@@ -13,9 +13,10 @@ import com.bances.agua_deliciosa.dto.admin.EmployeeDTO;
 import com.bances.agua_deliciosa.model.Employee;
 import com.bances.agua_deliciosa.model.User;
 import com.bances.agua_deliciosa.repository.EmployeeRepository;
-import com.bances.agua_deliciosa.model.Role;
 import com.bances.agua_deliciosa.repository.UserRepository;
 import com.bances.agua_deliciosa.repository.RoleRepository;
+import com.bances.agua_deliciosa.model.Role;
+import com.bances.agua_deliciosa.model.Gender;
 
 @Service
 @Transactional(readOnly = true)
@@ -50,11 +51,11 @@ public class EmployeeService {
         user.setName(dto.getName());
         user.setLastName(dto.getLastName());
         user.setEmail(dto.getEmail());
-        user.setDocumentNumber(dto.getDocumentNumber());
         user.setPhoneNumber(dto.getPhoneNumber());
+        user.setDocumentNumber(dto.getDocumentNumber());
+        user.setGender(Gender.valueOf(dto.getGender()));
         user.setBirthDate(dto.getBirthDate());
-        user.setGender(dto.getGender());
-        user.setActive(dto.getActive());
+        user.setActive(true);
     }
 
     public List<Employee> getAllEmployees() {
@@ -123,5 +124,10 @@ public class EmployeeService {
 
     public Page<Employee> getEmployeesPage(Pageable pageable) {
         return employeeRepository.findAll(pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public long getEmployeeCount() {
+        return employeeRepository.count();
     }
 }

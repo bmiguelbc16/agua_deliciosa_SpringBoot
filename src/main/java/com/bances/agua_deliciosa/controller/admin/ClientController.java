@@ -1,49 +1,100 @@
 package com.bances.agua_deliciosa.controller.admin;
 
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
-import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import com.bances.agua_deliciosa.dto.admin.ClientDTO;
-import com.bances.agua_deliciosa.model.Client;
-import com.bances.agua_deliciosa.service.core.ClientService;
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-@RestController
-@RequestMapping("/api/v1/admin/clients")
-@RequiredArgsConstructor
-public class ClientController {
+import com.bances.agua_deliciosa.util.Routes;
+import com.bances.agua_deliciosa.dto.admin.ClientDTO;
+import com.bances.agua_deliciosa.service.auth.SecurityService;
+import com.bances.agua_deliciosa.service.core.ClientService;
+
+import jakarta.validation.Valid;
+
+@Controller
+@RequestMapping(Routes.Admin.CLIENTS)
+public class ClientController extends AdminController {
     
     private final ClientService clientService;
     
+    public ClientController(SecurityService securityService, ClientService clientService) {
+        super(securityService);
+        this.clientService = clientService;
+    }
+
     @GetMapping
-    public ResponseEntity<Page<Client>> index(
+    public String index(
         @RequestParam(required = false) String search,
-        @PageableDefault(size = 10) Pageable pageable
+        @PageableDefault(size = 10) Pageable pageable,
+        Model model
     ) {
-        return ResponseEntity.ok(clientService.getClientsPage(pageable));
+        setupCommonAttributes(model, "clients");
+        model.addAttribute("title", "Gestión de Clientes");
+        model.addAttribute("clients", clientService.getClientsPage(pageable));
+        return view("clients/index");
     }
-    
-    @GetMapping("/{id}")
-    public ResponseEntity<Client> show(@PathVariable Long id) {
-        return ResponseEntity.ok(clientService.getClientById(id));
+
+    @GetMapping("/create")
+    public String create(Model model) {
+        setupCommonAttributes(model, "clients");
+        model.addAttribute("title", "Nuevo Cliente");
+        model.addAttribute("client", new ClientDTO());
+        return view("clients/create");
     }
-    
-    @PostMapping
-    public ResponseEntity<Client> store(@Valid @RequestBody ClientDTO dto) {
-        return ResponseEntity.ok(clientService.createClient(dto));
+
+    @PostMapping("/create")
+    public String store(
+        @Valid @ModelAttribute("client") ClientDTO dto,
+        RedirectAttributes redirectAttributes
+    ) {
+        try {
+            clientService.createClient(dto);
+            addSuccessMessage(redirectAttributes, "Cliente creado exitosamente");
+        } catch (Exception e) {
+            addErrorMessage(redirectAttributes, "Error al crear el cliente: " + e.getMessage());
+            return redirect("create");
+        }
+        return redirect("");
     }
-    
-    @PutMapping("/{id}")
-    public ResponseEntity<Client> update(@PathVariable Long id, @Valid @RequestBody ClientDTO dto) {
-        return ResponseEntity.ok(clientService.updateClient(id, dto));
+
+    @GetMapping("/{id}/edit")
+    public String edit(@PathVariable Long id, Model model) {
+        setupCommonAttributes(model, "clients");
+        model.addAttribute("title", "Editar Cliente");
+        model.addAttribute("client", clientService.getClientById(id));
+        return view("clients/edit");
     }
-    
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> destroy(@PathVariable Long id) {
-        clientService.deleteClient(id);
-        return ResponseEntity.noContent().build();
+
+    @PostMapping("/{id}/update")
+    public String updateClient(
+        @PathVariable Long id,
+        @Valid @ModelAttribute("client") ClientDTO dto,
+        RedirectAttributes redirectAttributes
+    ) {
+        try {
+            clientService.updateClient(id, dto);
+            addSuccessMessage(redirectAttributes, "Cliente actualizado exitosamente");
+        } catch (Exception e) {
+            addErrorMessage(redirectAttributes, "Error al actualizar el cliente: " + e.getMessage());
+            return redirect(id + "/edit");
+        }
+        return redirect("");
+    }
+
+    @PostMapping("/{id}/delete")
+    public String delete(
+        @PathVariable Long id,
+        RedirectAttributes redirectAttributes
+    ) {
+        try {
+            clientService.deleteClient(id);
+            addSuccessMessage(redirectAttributes, "Cliente eliminado exitosamente");
+        } catch (Exception e) {
+            addErrorMessage(redirectAttributes, "Error al eliminar el cliente: " + e.getMessage());
+        }
+        return redirect("");
     }
 }

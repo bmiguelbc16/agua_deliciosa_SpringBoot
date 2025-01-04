@@ -1,96 +1,94 @@
 package com.bances.agua_deliciosa.controller.admin;
 
-import com.bances.agua_deliciosa.service.core.PermissionService;
-import com.bances.agua_deliciosa.model.Permission;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.util.List;
+import com.bances.agua_deliciosa.util.Routes;
+import com.bances.agua_deliciosa.dto.admin.PermissionDTO;
+import com.bances.agua_deliciosa.service.auth.SecurityService;
+import com.bances.agua_deliciosa.service.core.PermissionService;
 
-@Slf4j
-@PreAuthorize("hasRole('ADMIN')")
+import jakarta.validation.Valid;
+
 @Controller
-@RequestMapping("/admin/permissions")
+@RequestMapping(Routes.Admin.PERMISSIONS)
 public class PermissionsController extends AdminController {
-
+    
     private final PermissionService permissionService;
-
-    // Inyección del servicio de permisos
-    public PermissionsController(PermissionService permissionService) {
-        super(null);  // Puedes inyectar el servicio de seguridad si es necesario
+    
+    public PermissionsController(SecurityService securityService, PermissionService permissionService) {
+        super(securityService);
         this.permissionService = permissionService;
     }
 
-    // Listar permisos
     @GetMapping
-    public String listPermissions(Model model) {
-        List<Permission> permissions = permissionService.listAll();
-        model.addAttribute("permissions", permissions);
-        setupCommonAttributes(model);  // Agregar atributos comunes
-        return getAdminView("permissions/list");  // Vista para listar permisos
+    public String index(Model model) {
+        setupCommonAttributes(model, "permissions");
+        model.addAttribute("title", "Gestión de Permisos");
+        model.addAttribute("permissions", permissionService.getAllPermissions());
+        return view("permissions/index");
     }
 
-    // Mostrar formulario para crear un nuevo permiso
     @GetMapping("/create")
-    public String createPermissionForm(Model model) {
-        setupCommonAttributes(model);  // Agregar atributos comunes
-        return getAdminView("permissions/create");  // Vista para crear permiso
+    public String create(Model model) {
+        setupCommonAttributes(model, "permissions");
+        model.addAttribute("title", "Nuevo Permiso");
+        model.addAttribute("permission", new PermissionDTO());
+        return view("permissions/create");
     }
 
-    // Crear nuevo permiso
     @PostMapping("/create")
-    public String createPermission(@RequestParam String name, @RequestParam String description,
-                                    RedirectAttributes redirectAttributes) {
+    public String store(
+        @Valid @ModelAttribute("permission") PermissionDTO dto,
+        RedirectAttributes redirectAttributes
+    ) {
         try {
-            permissionService.create(name, description);  // Crear permiso con nombre y descripción
+            permissionService.createPermission(dto);
             addSuccessMessage(redirectAttributes, "Permiso creado exitosamente");
-        } catch (RuntimeException e) {
-            addErrorMessage(redirectAttributes, e.getMessage());
+        } catch (Exception e) {
+            addErrorMessage(redirectAttributes, "Error al crear el permiso: " + e.getMessage());
+            return redirect("create");
         }
-        return redirect("/admin/permissions");
+        return redirect("");
     }
 
-    // Mostrar formulario para editar un permiso
-    @GetMapping("/edit/{id}")
-    public String editPermissionForm(@PathVariable Long id, Model model) {
-        Permission permission = permissionService.getById(id);  // Obtener permiso por ID
-        model.addAttribute("permission", permission);
-        setupCommonAttributes(model);  // Agregar atributos comunes
-        return getAdminView("permissions/edit");  // Vista para editar permiso
+    @GetMapping("/{id}/edit")
+    public String edit(@PathVariable Long id, Model model) {
+        setupCommonAttributes(model, "permissions");
+        model.addAttribute("title", "Editar Permiso");
+        model.addAttribute("permission", permissionService.getPermissionById(id));
+        return view("permissions/edit");
     }
 
-    // Actualizar permiso
-    @PostMapping("/edit/{id}")
-    public String updatePermission(@PathVariable Long id, @RequestParam String name,
-                                    @RequestParam String description, RedirectAttributes redirectAttributes) {
+    @PostMapping("/{id}/update")
+    public String update(
+        @PathVariable Long id,
+        @Valid @ModelAttribute("permission") PermissionDTO dto,
+        RedirectAttributes redirectAttributes
+    ) {
         try {
-            permissionService.update(id, name, description);  // Actualizar permiso con nuevo nombre y descripción
+            permissionService.update(id, dto);
             addSuccessMessage(redirectAttributes, "Permiso actualizado exitosamente");
-        } catch (RuntimeException e) {
-            addErrorMessage(redirectAttributes, e.getMessage());
+        } catch (Exception e) {
+            addErrorMessage(redirectAttributes, "Error al actualizar el permiso: " + e.getMessage());
+            return redirect(id + "/edit");
         }
-        return redirect("/admin/permissions");
+        return redirect("");
     }
 
-    // Eliminar permiso
-    @PostMapping("/delete/{id}")
-    public String deletePermission(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+    @PostMapping("/{id}/delete")
+    public String delete(
+        @PathVariable Long id,
+        RedirectAttributes redirectAttributes
+    ) {
         try {
-            permissionService.delete(id);  // Eliminar permiso
+            permissionService.deletePermission(id);
             addSuccessMessage(redirectAttributes, "Permiso eliminado exitosamente");
-        } catch (RuntimeException e) {
-            addErrorMessage(redirectAttributes, e.getMessage());
+        } catch (Exception e) {
+            addErrorMessage(redirectAttributes, "Error al eliminar el permiso: " + e.getMessage());
         }
-        return redirect("/admin/permissions");
-    }
-
-    // Implementación del método getMenuActive() desde AdminController
-    @Override
-    protected String getMenuActive() {
-        return "permissions";  // Indica que la sección de permisos está activa en el menú
+        return redirect("");
     }
 }

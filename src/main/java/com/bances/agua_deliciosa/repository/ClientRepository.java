@@ -29,7 +29,7 @@ public interface ClientRepository extends JpaRepository<Client, Long> {
     Page<Client> findAll(@NonNull Pageable pageable);
 
     @Query(value = """
-        SELECT COUNT(c.*) > 0 FROM clients c 
+        SELECT COUNT(*) > 0 FROM clients c 
         INNER JOIN users u ON c.id = u.userable_id 
         WHERE u.userable_type = 'Client'
         AND u.document_number = :documentNumber
@@ -37,7 +37,7 @@ public interface ClientRepository extends JpaRepository<Client, Long> {
     boolean existsByDocumentNumber(@Param("documentNumber") String documentNumber);
 
     @Query(value = """
-        SELECT COUNT(c.*) > 0 FROM clients c 
+        SELECT COUNT(*) > 0 FROM clients c 
         INNER JOIN users u ON c.id = u.userable_id 
         WHERE u.userable_type = 'Client'
         AND u.email = :email

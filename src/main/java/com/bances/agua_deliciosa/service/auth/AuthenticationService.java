@@ -1,13 +1,16 @@
 package com.bances.agua_deliciosa.service.auth;
 
-import com.bances.agua_deliciosa.exception.UnauthorizedAccessException;
-import com.bances.agua_deliciosa.exception.InvalidPasswordException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.bances.agua_deliciosa.model.User;
+import com.bances.agua_deliciosa.repository.UserRepository;
+
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -16,46 +19,50 @@ public class AuthenticationService {
     
     private final AuthenticationManager authenticationManager;
     private final CoreUserService userService;
-    private final SecurityService securityService;
-    
-    // Método para autenticar al usuario con email y contraseña
-    public void authenticate(String email, String password) {
-        try {
-            Authentication auth = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(email, password)
-            );
-            SecurityContextHolder.getContext().setAuthentication(auth);
-        } catch (BadCredentialsException e) {
-            throw new UnauthorizedAccessException("Credenciales incorrectas", e);
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+
+    public Authentication authenticate(String email, String password) {
+        Authentication authentication = authenticationManager.authenticate(
+            new UsernamePasswordAuthenticationToken(email, password)
+        );
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        return authentication;
+    }
+
+    public void verifyEmail(String email, String token) {
+        userService.verifyEmail(email, token);
+    }
+
+    @Transactional
+    public void initiatePasswordReset(String email) {
+        userService.initiatePasswordReset(email);
+    }
+
+    @Transactional
+    public void resetPassword(String email, String token, String newPassword) {
+        userService.resetPassword(email, token, newPassword);
+    }
+
+    @Transactional
+    public void changePassword(String email, String currentPassword, String newPassword) {
+        User user = userRepository.findByEmail(email)
+            .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        // Verificar la contraseña actual
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            throw new RuntimeException("Contraseña actual incorrecta");
         }
+
+        // Actualizar la contraseña
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
     }
-    
-    // Método para verificar email
-    public void verifyEmail(Long userId) {
-        userService.verifyEmail(userId);
-    }
-    
-    // Método para restablecer la contraseña
-    public void resetPassword(String email, String password) {
-        userService.resetPassword(email, password);
-    }
-    
-    // Método para enviar el enlace de restablecimiento de contraseña
-    public void sendResetPasswordLink(String email) {
-        userService.sendResetPasswordLink(email);
-    }
-    
-    // Método para cambiar la contraseña
-    public void confirmPassword(String currentPassword, String newPassword) {
-        var user = securityService.getCurrentUser();
-        if (user == null) {
-            throw new UnauthorizedAccessException("Usuario no autenticado");
-        }
-        
-        if (!userService.checkPassword(user, currentPassword)) {
-            throw new InvalidPasswordException("La contraseña actual es incorrecta");
-        }
-        
-        userService.updatePassword(user.getId(), newPassword);
+
+    @Transactional(readOnly = true)
+    public boolean confirmPassword(String email, String password) {
+        User user = userRepository.findByEmail(email)
+            .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        return passwordEncoder.matches(password, user.getPassword());
     }
 }

@@ -7,20 +7,17 @@ import org.springframework.web.bind.annotation.GetMapping;
 
 @Controller
 public class HomeController {
-
+    
     @GetMapping("/")
-    public String home(Authentication authentication) {
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return "redirect:/login";
+    public String index(Authentication authentication) {
+        if (authentication != null && authentication.isAuthenticated()) {
+            // Redirigir según el rol
+            if (authentication.getAuthorities().contains(new SimpleGrantedAuthority("Admin"))) {
+                return "redirect:/admin/dashboard";
+            }
+            // Aquí puedes agregar más redirecciones según otros roles
+            return "redirect:/admin/dashboard"; // Por defecto
         }
-
-        // Redirigir según el rol
-        if (authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_Admin"))) {
-            return "redirect:/admin/dashboard";
-        } else if (authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_Cliente"))) {
-            return "redirect:/client/dashboard";
-        }
-
         return "redirect:/login";
     }
-} 
+}

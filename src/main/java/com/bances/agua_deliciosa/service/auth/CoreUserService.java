@@ -1,124 +1,117 @@
 package com.bances.agua_deliciosa.service.auth;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.bances.agua_deliciosa.model.User;
+import org.springframework.beans.factory.annotation.Qualifier;
+
 import com.bances.agua_deliciosa.model.Role;
+import com.bances.agua_deliciosa.model.User;
+import com.bances.agua_deliciosa.repository.RoleRepository;
 import com.bances.agua_deliciosa.repository.UserRepository;
-import com.bances.agua_deliciosa.service.core.RoleService;
-import com.bances.agua_deliciosa.service.system.EmailService;
+import com.bances.agua_deliciosa.security.token.TokenService;
+import com.bances.agua_deliciosa.service.EmailService;
+
 import java.time.LocalDateTime;
 
 @Service
-@Transactional(readOnly = true)
-public class CoreUserService extends UserService {
-    
-    private final PasswordEncoder passwordEncoder;
-    private final RoleService roleService;
-    private final EmailService emailService;
-    
-    public CoreUserService(
-        UserRepository userRepository,
-        PasswordEncoder passwordEncoder,
-        RoleService roleService,
-        EmailService emailService
-    ) {
-        super(userRepository);
-        this.passwordEncoder = passwordEncoder;
-        this.roleService = roleService;
-        this.emailService = emailService;
-    }
-    
+public class CoreUserService {
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private RoleRepository roleRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private TokenService tokenService;
+
+    @Autowired
+    @Qualifier("notificationEmailService")
+    private EmailService emailService;
+
     @Transactional
-    public User save(User user) {
-        beforeSave(user);
-        return userRepository.save(user);
-    }
-    
-    public boolean checkPassword(User user, String rawPassword) {
-        return passwordEncoder.matches(rawPassword, user.getPassword());
-    }
-    
-    @Transactional
-    public User createUser(User user, String password, String roleName) {
-        user.setPassword(passwordEncoder.encode(password));
-        Role role = roleService.getByName(roleName);
-        user.setRole(role);
-        return save(user);
-    }
-    
-    @Transactional
-    public void updatePassword(Long userId, String newPassword) {
-        User user = getById(userId);
-        user.setPassword(passwordEncoder.encode(newPassword));
-        save(user);
-    }
-    
-    @Override
-    protected void beforeSave(User user) {
-        super.beforeSave(user);
-        if (user.getId() == null && userRepository.findByEmail(user.getEmail()).isPresent()) {
+    public User registerUser(User user) {
+        // Verificar si el email ya existe
+        if (userRepository.existsByEmail(user.getEmail())) {
             throw new RuntimeException("El email ya está registrado");
         }
+
+        // Verificar si el documento ya existe
+        if (user.getDocumentNumber() != null && userRepository.existsByDocumentNumber(user.getDocumentNumber())) {
+            throw new RuntimeException("El número de documento ya está registrado");
+        }
+
+        // Asignar rol por defecto (ROLE_CLIENT)
+        Role defaultRole = roleRepository.findByName("ROLE_CLIENT")
+                .orElseThrow(() -> new RuntimeException("Rol por defecto no encontrado"));
+        user.setRole(defaultRole);
+
+        // Encriptar contraseña
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+
+        // Guardar usuario
+        user = userRepository.save(user);
+
+        // Generar token de verificación y enviar email
+        String verificationToken = tokenService.generateVerificationToken(user);
+        String verificationLink = generateVerificationLink(verificationToken);
+        emailService.sendWelcomeEmail(user.getEmail(), user.getName(), verificationLink);
+
+        return user;
     }
-    
+
     @Transactional
-    public void verifyEmail(Long userId) {
-        User user = getById(userId);
+    public void verifyEmail(String email, String token) {
+        if (!tokenService.validateVerificationToken(email, token)) {
+            throw new RuntimeException("Token de verificación inválido o expirado");
+        }
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
         user.setEmailVerifiedAt(LocalDateTime.now());
-        save(user);
-        emailService.sendEmailVerifiedNotification(user.getEmail());
+        userRepository.save(user);
+        emailService.sendEmailVerifiedNotification(email);
     }
-    
+
     @Transactional
-    public void resetPassword(String email, String password) {
+    public void initiatePasswordReset(String email) {
         User user = userRepository.findByEmail(email)
-            .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-        user.setPassword(passwordEncoder.encode(password));
-        save(user);
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        String resetToken = tokenService.generatePasswordResetToken(user);
+        String resetLink = generatePasswordResetLink(resetToken);
+        emailService.sendResetPasswordLink(email, resetLink);
     }
-    
+
     @Transactional
-    public void sendResetPasswordLink(String email) {
+    public void resetPassword(String email, String token, String newPassword) {
+        if (!tokenService.validateResetToken(email, token)) {
+            throw new RuntimeException("Token de restablecimiento inválido o expirado");
+        }
+
         User user = userRepository.findByEmail(email)
-            .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-        emailService.sendResetPasswordLink(user.getEmail());
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+
     }
     
-    @Transactional
-    public User updateUser(Long userId, User updatedUser, String roleName) {
-        User user = getById(userId);
+
+    private String generateVerificationLink(String token) {
         
-        // Actualizar campos básicos
-        user.setName(updatedUser.getName());
-        user.setLastName(updatedUser.getLastName());
-        user.setPhoneNumber(updatedUser.getPhoneNumber());
-        user.setBirthDate(updatedUser.getBirthDate());
-        user.setGender(updatedUser.getGender());
+        return "http://localhost:8080/api/v1/auth/verify-email?token=" + token;
+    }
+    
+
+    private String generatePasswordResetLink(String token) {
         
-        // Actualizar email si ha cambiado
-        if (!user.getEmail().equals(updatedUser.getEmail())) {
-            if (userRepository.existsByEmailAndIdNot(updatedUser.getEmail(), userId)) {
-                throw new RuntimeException("El email ya está registrado");
-            }
-            user.setEmail(updatedUser.getEmail());
-        }
-        
-        // Actualizar documento si ha cambiado
-        if (!user.getDocumentNumber().equals(updatedUser.getDocumentNumber())) {
-            if (userRepository.existsByDocumentNumberAndIdNot(updatedUser.getDocumentNumber(), userId)) {
-                throw new RuntimeException("El documento ya está registrado");
-            }
-            user.setDocumentNumber(updatedUser.getDocumentNumber());
-        }
-        
-        // Actualizar rol si ha cambiado
-        if (roleName != null && !user.getRole().getName().equals(roleName)) {
-            Role role = roleService.getByName(roleName);
-            user.setRole(role);
-        }
-        
-        return save(user);
+        return "http://localhost:8080/api/v1/auth/reset-password?token=" + token;
     }
 }
