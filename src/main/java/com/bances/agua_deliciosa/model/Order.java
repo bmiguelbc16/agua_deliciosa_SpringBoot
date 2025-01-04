@@ -3,6 +3,7 @@ package com.bances.agua_deliciosa.model;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;
+import java.math.BigDecimal;
 
 @Entity
 @Table(name = "orders")
@@ -16,10 +17,10 @@ public class Order {
     @JoinColumn(name = "client_id")
     private Client client;
     
-    @Column(name = "order_date")
-    private LocalDateTime orderDate;
-    
     private String status;
+    
+    @Column(precision = 10, scale = 2)
+    private BigDecimal total;
     
     @Column(name = "created_at")
     private LocalDateTime createdAt;

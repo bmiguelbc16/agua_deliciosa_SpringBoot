@@ -1,55 +1,34 @@
 package com.bances.agua_deliciosa.dto;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.List;
 import lombok.Data;
 
 @Data
 public class DashboardDTO {
-    private StatsDTO stats;
-    private List<MonthlyRevenueDTO> monthlyRevenue;
-    private List<RecentOrderDTO> recentOrders;
-    private List<TopProductDTO> topProducts;
-    private List<TopCustomerDTO> topCustomers;
-
+    private DashboardStats stats;
+    private List<OrderDTO> recentOrders;
+    private List<ProductDTO> topProducts;
+    private List<CustomerDTO> topCustomers;
+    
     @Data
-    public static class StatsDTO {
-        private long totalCustomers;
-        private long totalOrders;
-        private long totalProducts;
-        private long totalEmployees;
-    }
-
-    @Data
-    public static class MonthlyRevenueDTO {
-        private int year;
-        private int month;
-        private BigDecimal amount;
-    }
-
-    @Data
-    public static class RecentOrderDTO {
+    public static class OrderDTO {
         private String customerName;
-        private String productName;
+        private double total;
         private String status;
-        private BigDecimal total;
+        private String statusClass;
     }
-
+    
     @Data
-    public static class TopProductDTO {
+    public static class ProductDTO {
         private String name;
-        private BigDecimal price;
-        private int salesCount;
-        private double salesGrowth;
-        private int stock;
+        private double price;
+        private int soldCount;
     }
-
+    
     @Data
-    public static class TopCustomerDTO {
+    public static class CustomerDTO {
         private String name;
         private int orderCount;
-        private BigDecimal totalSpent;
-        private LocalDateTime lastPurchase;
+        private double totalSpent;
     }
 }

@@ -1,6 +1,5 @@
 package com.bances.agua_deliciosa.service.core;
 
-import java.util.List;
 import java.time.LocalDateTime;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -12,11 +11,11 @@ import lombok.RequiredArgsConstructor;
 import com.bances.agua_deliciosa.dto.admin.EmployeeDTO;
 import com.bances.agua_deliciosa.model.Employee;
 import com.bances.agua_deliciosa.model.User;
+import com.bances.agua_deliciosa.model.Role;
+import com.bances.agua_deliciosa.model.Gender;
 import com.bances.agua_deliciosa.repository.EmployeeRepository;
 import com.bances.agua_deliciosa.repository.UserRepository;
 import com.bances.agua_deliciosa.repository.RoleRepository;
-import com.bances.agua_deliciosa.model.Role;
-import com.bances.agua_deliciosa.model.Gender;
 
 @Service
 @Transactional(readOnly = true)
@@ -28,8 +27,22 @@ public class EmployeeService {
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
 
+    public Page<Employee> getEmployeesPage(Pageable pageable) {
+        return employeeRepository.findAll(pageable);
+    }
+
     @Transactional
     public Employee createEmployee(EmployeeDTO dto) {
+        // Validar email único
+        if (userRepository.existsByEmail(dto.getEmail())) {
+            throw new RuntimeException("El email ya está registrado");
+        }
+
+        // Validar DNI único
+        if (userRepository.existsByDocumentNumber(dto.getDocumentNumber())) {
+            throw new RuntimeException("El DNI ya está registrado");
+        }
+
         Employee employee = new Employee();
         employeeRepository.save(employee);
 
@@ -38,9 +51,12 @@ public class EmployeeService {
         user.setPassword(passwordEncoder.encode(dto.getPassword()));
         user.setUserableType("Employee");
         user.setUserableId(employee.getId());
+        user.setActive(true);
+        user.setCreatedAt(LocalDateTime.now());
 
+        // Buscar y asignar el rol
         Role role = roleRepository.findByName(dto.getRoles())
-            .orElseThrow(() -> new RuntimeException("Rol no encontrado"));
+            .orElseThrow(() -> new RuntimeException("Rol no encontrado: " + dto.getRoles()));
         user.setRole(role);
 
         userRepository.save(user);
@@ -55,11 +71,6 @@ public class EmployeeService {
         user.setDocumentNumber(dto.getDocumentNumber());
         user.setGender(Gender.valueOf(dto.getGender()));
         user.setBirthDate(dto.getBirthDate());
-        user.setActive(true);
-    }
-
-    public List<Employee> getAllEmployees() {
-        return employeeRepository.findAll();
     }
 
     public Employee getEmployeeById(Long id) {
@@ -72,62 +83,48 @@ public class EmployeeService {
         Employee employee = getEmployeeById(id);
         User user = employee.getUser();
         
-        try {
-            // Solo validar si el email ha cambiado
-            if (!dto.getEmail().equals(user.getEmail())) {
-                if (userRepository.existsByEmailAndIdNot(dto.getEmail(), user.getId())) {
-                    throw new RuntimeException("El email ya está registrado por otro usuario");
-                }
-            }
-            
-            // Solo validar si el DNI ha cambiado
-            if (!dto.getDocumentNumber().equals(user.getDocumentNumber())) {
-                if (userRepository.existsByDocumentNumberAndIdNot(dto.getDocumentNumber(), user.getId())) {
-                    throw new RuntimeException("El DNI ya está registrado por otro usuario");
-                }
-            }
-            
-            // Actualizar datos del usuario
-            updateUserFromDTO(user, dto);
-            
-            // Solo actualizar la contraseña si se proporciona una nueva
-            String newPassword = dto.getPassword();
-            if (newPassword != null && !newPassword.trim().isEmpty()) {
-                user.setPassword(passwordEncoder.encode(dto.getPassword()));
-            }
-            
-            user.setUpdatedAt(LocalDateTime.now());
-            
-            // Actualizar rol
-            Role role = roleRepository.findByName(dto.getRoles())
-                .orElseThrow(() -> new RuntimeException("Rol no encontrado"));
-            user.setRole(role);
-            
-            // Guardar cambios
-            userRepository.save(user);
-            return employeeRepository.save(employee);
-            
-        } catch (Exception e) {
-            throw new RuntimeException("Error al actualizar el empleado: " + e.getMessage());
+        // Validar email único
+        if (!dto.getEmail().equals(user.getEmail()) && 
+            userRepository.existsByEmailAndIdNot(dto.getEmail(), user.getId())) {
+            throw new RuntimeException("El email ya está registrado por otro usuario");
         }
+        
+        // Validar DNI único
+        if (!dto.getDocumentNumber().equals(user.getDocumentNumber()) && 
+            userRepository.existsByDocumentNumberAndIdNot(dto.getDocumentNumber(), user.getId())) {
+            throw new RuntimeException("El DNI ya está registrado por otro usuario");
+        }
+        
+        // Actualizar datos del usuario
+        updateUserFromDTO(user, dto);
+        
+        // Actualizar contraseña si se proporciona una nueva
+        if (dto.getPassword() != null && !dto.getPassword().trim().isEmpty()) {
+            user.setPassword(passwordEncoder.encode(dto.getPassword()));
+        }
+        
+        // Actualizar rol si ha cambiado
+        if (!user.getRole().getName().equals(dto.getRoles())) {
+            Role role = roleRepository.findByName(dto.getRoles())
+                .orElseThrow(() -> new RuntimeException("Rol no encontrado: " + dto.getRoles()));
+            user.setRole(role);
+        }
+        
+        user.setUpdatedAt(LocalDateTime.now());
+        userRepository.save(user);
+        
+        return employee;
     }
 
     @Transactional
     public void deleteEmployee(Long id) {
         Employee employee = getEmployeeById(id);
         User user = employee.getUser();
+        
         if (user != null) {
             userRepository.delete(user);
         }
-        employeeRepository.deleteById(id);
-    }
-
-    public Page<Employee> getEmployeesPage(Pageable pageable) {
-        return employeeRepository.findAll(pageable);
-    }
-
-    @Transactional(readOnly = true)
-    public long getEmployeeCount() {
-        return employeeRepository.count();
+        
+        employeeRepository.delete(employee);
     }
 }

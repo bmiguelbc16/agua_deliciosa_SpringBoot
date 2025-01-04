@@ -33,7 +33,7 @@
                             <span class="info-box-icon bg-info elevation-1"><i class="fas fa-users"></i></span>
                             <div class="info-box-content">
                                 <span class="info-box-text">Clientes</span>
-                                <span class="info-box-number">10</span>
+                                <span class="info-box-number" th:text="${stats.totalCustomers}">0</span>
                             </div>
                         </div>
                     </div>
@@ -42,7 +42,7 @@
                             <span class="info-box-icon bg-success elevation-1"><i class="fas fa-shopping-cart"></i></span>
                             <div class="info-box-content">
                                 <span class="info-box-text">Pedidos</span>
-                                <span class="info-box-number">41</span>
+                                <span class="info-box-number" th:text="${stats.totalOrders}">0</span>
                             </div>
                         </div>
                     </div>
@@ -51,7 +51,7 @@
                             <span class="info-box-icon bg-warning elevation-1"><i class="fas fa-box"></i></span>
                             <div class="info-box-content">
                                 <span class="info-box-text">Productos</span>
-                                <span class="info-box-number">15</span>
+                                <span class="info-box-number" th:text="${stats.totalProducts}">0</span>
                             </div>
                         </div>
                     </div>
@@ -60,7 +60,7 @@
                             <span class="info-box-icon bg-danger elevation-1"><i class="fas fa-user-tie"></i></span>
                             <div class="info-box-content">
                                 <span class="info-box-text">Trabajadores</span>
-                                <span class="info-box-number">5</span>
+                                <span class="info-box-number" th:text="${stats.totalEmployees}">0</span>
                             </div>
                         </div>
                     </div>
@@ -114,35 +114,20 @@
                                         <thead>
                                             <tr>
                                                 <th>Cliente</th>
-                                                <th>Producto</th>
-                                                <th>Estado</th>
                                                 <th>Total</th>
+                                                <th>Estado</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            <tr>
-                                                <td>Juan Pérez</td>
-                                                <td>Agua x 20L</td>
-                                                <td><span class="badge bg-success">Entregado</span></td>
-                                                <td>S/. 15.00</td>
+                                            <tr th:if="${recentOrders != null}" th:each="order : ${recentOrders}">
+                                                <td th:text="${order.customerName}">Cliente</td>
+                                                <td th:text="${'S/. ' + order.total}">S/. 0.00</td>
+                                                <td>
+                                                    <span th:class="${'badge ' + order.statusClass}" th:text="${order.status}">Pendiente</span>
+                                                </td>
                                             </tr>
-                                            <tr>
-                                                <td>María García</td>
-                                                <td>Agua x 7L</td>
-                                                <td><span class="badge bg-warning">En Proceso</span></td>
-                                                <td>S/. 8.00</td>
-                                            </tr>
-                                            <tr>
-                                                <td>Carlos López</td>
-                                                <td>Agua x 20L</td>
-                                                <td><span class="badge bg-info">Confirmado</span></td>
-                                                <td>S/. 15.00</td>
-                                            </tr>
-                                            <tr>
-                                                <td>Ana Torres</td>
-                                                <td>Agua x 20L</td>
-                                                <td><span class="badge bg-success">Entregado</span></td>
-                                                <td>S/. 15.00</td>
+                                            <tr th:if="${recentOrders == null || recentOrders.empty}">
+                                                <td colspan="3" class="text-center">No hay pedidos recientes</td>
                                             </tr>
                                         </tbody>
                                     </table>
@@ -170,32 +155,17 @@
                                         <tr>
                                             <th>Producto</th>
                                             <th>Precio</th>
-                                            <th>Ventas</th>
-                                            <th>Stock</th>
+                                            <th>Vendidos</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr>
-                                            <td>Agua x 20L</td>
-                                            <td>S/. 15.00</td>
-                                            <td>
-                                                <small class="text-success mr-1">
-                                                    <i class="fas fa-arrow-up"></i> 12%
-                                                </small>
-                                                45 Vendidos
-                                            </td>
-                                            <td>20</td>
+                                        <tr th:if="${topProducts != null}" th:each="product : ${topProducts}">
+                                            <td th:text="${product.name}">Producto</td>
+                                            <td th:text="${'S/. ' + product.price}">S/. 0.00</td>
+                                            <td th:text="${product.soldCount}">0</td>
                                         </tr>
-                                        <tr>
-                                            <td>Agua x 7L</td>
-                                            <td>S/. 8.00</td>
-                                            <td>
-                                                <small class="text-warning mr-1">
-                                                    <i class="fas fa-arrow-right"></i> 0%
-                                                </small>
-                                                30 Vendidos
-                                            </td>
-                                            <td>15</td>
+                                        <tr th:if="${topProducts == null || topProducts.empty}">
+                                            <td colspan="3" class="text-center">No hay productos vendidos</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -219,22 +189,17 @@
                                         <tr>
                                             <th>Cliente</th>
                                             <th>Pedidos</th>
-                                            <th>Total Gastado</th>
-                                            <th>Última Compra</th>
+                                            <th>Total</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr>
-                                            <td>Juan Pérez</td>
-                                            <td>15</td>
-                                            <td>S/. 225.00</td>
-                                            <td>Hace 2 días</td>
+                                        <tr th:if="${topCustomers != null}" th:each="customer : ${topCustomers}">
+                                            <td th:text="${customer.name}">Cliente</td>
+                                            <td th:text="${customer.orderCount}">0</td>
+                                            <td th:text="${'S/. ' + customer.totalSpent}">S/. 0.00</td>
                                         </tr>
-                                        <tr>
-                                            <td>María García</td>
-                                            <td>12</td>
-                                            <td>S/. 180.00</td>
-                                            <td>Hace 5 días</td>
+                                        <tr th:if="${topCustomers == null || topCustomers.empty}">
+                                            <td colspan="3" class="text-center">No hay clientes registrados</td>
                                         </tr>
                                     </tbody>
                                 </table>

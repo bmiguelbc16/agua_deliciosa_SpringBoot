@@ -1,113 +1,111 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="utf-8">
+    <title>Gestión de Clientes</title>
 </head>
 <body>
-    <div th:fragment="content">
-        <section class="content-header">
-            <div class="container-fluid">
-                <div class="row mb-2">
-                    <div class="col-sm-6">
-                        <h1>Gestión de Clientes</h1>
-                    </div>
-                    <div class="col-sm-6">
-                        <ol class="breadcrumb float-sm-right">
-                            <li class="breadcrumb-item"><a href="#">Inicio</a></li>
-                            <li class="breadcrumb-item active">Clientes</li>
-                        </ol>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section class="content">
-            <div class="container-fluid">
-                <div class="row mb-3">
-                    <div class="col-md-8">
-                        <div th:replace="admin/clients/_search :: searchForm"></div>
-                    </div>
-                    <div class="col-md-4 text-right">
-                        <a th:href="@{/admin/clients/create}" class="btn btn-success">
-                            <i class="fas fa-user-plus"></i> Nuevo Cliente
-                        </a>
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="col-12">
-                        <div class="card">
-                            <div class="card-header">
-                                <h3 class="card-title">Lista de Clientes</h3>
-                            </div>
-                            <div class="card-body table-responsive p-0">
-                                <table class="table table-hover">
-                                    <thead>
-                                        <tr class="bg-light">
-                                            <th class="text-center" style="width: 5%">#</th>
-                                            <th class="text-center" style="width: 25%">Nombre Completo</th>
-                                            <th class="text-center" style="width: 20%">Email</th>
-                                            <th class="text-center" style="width: 15%">DNI</th>
-                                            <th class="text-center" style="width: 15%">Teléfono</th>
-                                            <th class="text-center" style="width: 10%">Estado</th>
-                                            <th class="text-center" style="width: 10%">Acciones</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr th:if="${clients.empty}">
-                                            <td colspan="7" class="text-center">No hay clientes registrados</td>
-                                        </tr>
-                                        <tr th:each="client : ${clients}">
-                                            <td class="text-center" th:text="${client.id}"></td>
-                                            <td class="text-center" th:text="${client.user != null ? client.user.name + ' ' + client.user.lastName : ''}"></td>
-                                            <td class="text-center" th:text="${client.user != null ? client.user.email : ''}"></td>
-                                            <td class="text-center" th:text="${client.user != null ? client.user.documentNumber : ''}"></td>
-                                            <td class="text-center" th:text="${client.user != null ? client.user.phoneNumber : ''}"></td>
-                                            <td class="text-center">
-                                                <span th:if="${client.user != null and client.user.active}" class="badge badge-success">Activo</span>
-                                                <span th:if="${client.user != null and !client.user.active}" class="badge badge-danger">Inactivo</span>
-                                            </td>
-                                            <td class="text-center">
-                                                <a th:href="@{/admin/clients/edit/{id}(id=${client.id})}" class="btn btn-sm btn-warning">
-                                                    <i class="fas fa-edit"></i>
-                                                </a>
-                                                <button type="button" class="btn btn-sm btn-danger" 
-                                                        th:onclick="'deleteClient(' + ${client.id} + ')'">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
+    <div th:replace="~{admin/layout/layout :: layout(title='Gestión de Clientes', content=~{::section})}">
+        <section>
+            <div class="content-header">
+                <div class="container-fluid">
+                    <div class="row mb-2">
+                        <div class="col-sm-6">
+                            <h1>Gestión de Clientes</h1>
+                        </div>
+                        <div class="col-sm-6">
+                            <ol class="breadcrumb float-sm-right">
+                                <li class="breadcrumb-item"><a th:href="@{/admin/dashboard}">Inicio</a></li>
+                                <li class="breadcrumb-item active">Clientes</li>
+                            </ol>
                         </div>
                     </div>
                 </div>
             </div>
-        </section>
 
-        <script th:inline="javascript">
-            function deleteClient(id) {
-                Swal.fire({
-                    title: '¿Estás seguro?',
-                    text: "Esta acción no se puede deshacer",
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#3085d6',
-                    cancelButtonColor: '#d33',
-                    confirmButtonText: 'Sí, eliminar',
-                    cancelButtonText: 'Cancelar'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        const form = document.createElement('form');
-                        form.method = 'POST';
-                        form.action = `/admin/clients/${id}/delete`;
-                        document.body.appendChild(form);
-                        form.submit();
-                    }
-                });
-            }
-        </script>
+            <section class="content">
+                <div class="container-fluid">
+                    <div class="row mb-3">
+                        <div class="col-md-8">
+                            <div th:replace="~{admin/clients/_search :: searchForm}"></div>
+                        </div>
+                        <div class="col-md-4 text-right">
+                            <a th:href="@{/admin/clients/create}" class="btn btn-success">
+                                <i class="fas fa-user-plus"></i> Nuevo Cliente
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">Lista de Clientes</h3>
+                                </div>
+                                <div class="card-body table-responsive p-0">
+                                    <table class="table table-hover text-nowrap">
+                                        <thead>
+                                            <tr>
+                                                <th class="text-center">#</th>
+                                                <th class="text-center">Nombre Completo</th>
+                                                <th class="text-center">Email</th>
+                                                <th class="text-center">DNI</th>
+                                                <th class="text-center">Teléfono</th>
+                                                <th class="text-center">Estado</th>
+                                                <th class="text-center">Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr th:if="${clients.empty}">
+                                                <td colspan="7" class="text-center">No hay clientes registrados</td>
+                                            </tr>
+                                            <tr th:each="client : ${clients}">
+                                                <td class="text-center" th:text="${client.id}"></td>
+                                                <td class="text-center" th:text="${client.user != null ? client.user.name + ' ' + client.user.lastName : ''}"></td>
+                                                <td class="text-center" th:text="${client.user != null ? client.user.email : ''}"></td>
+                                                <td class="text-center" th:text="${client.user != null ? client.user.documentNumber : ''}"></td>
+                                                <td class="text-center" th:text="${client.user != null ? client.user.phoneNumber : ''}"></td>
+                                                <td class="text-center">
+                                                    <span th:if="${client.user != null and client.user.active}" class="badge badge-success">Activo</span>
+                                                    <span th:if="${client.user != null and !client.user.active}" class="badge badge-danger">Inactivo</span>
+                                                </td>
+                                                <td class="text-center">
+                                                    <a th:href="@{/admin/clients/edit/{id}(id=${client.id})}" class="btn btn-sm btn-warning">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                    <button type="button" class="btn btn-sm btn-danger" 
+                                                            th:onclick="'deleteClient(' + ${client.id} + ')'">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <script th:inline="javascript">
+                function deleteClient(id) {
+                    Swal.fire({
+                        title: '¿Estás seguro?',
+                        text: "¡No podrás revertir esto!",
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#3085d6',
+                        cancelButtonColor: '#d33',
+                        confirmButtonText: 'Sí, eliminar',
+                        cancelButtonText: 'Cancelar'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            window.location.href = '/admin/clients/delete/' + id;
+                        }
+                    });
+                }
+            </script>
+        </section>
     </div>
 </body>
-</html> 
+</html>

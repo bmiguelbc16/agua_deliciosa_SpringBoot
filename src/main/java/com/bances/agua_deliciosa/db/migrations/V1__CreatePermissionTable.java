@@ -25,7 +25,7 @@ public class V1__CreatePermissionTable implements JavaMigration {
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                     UNIQUE KEY unique_permission (name, guard_name),
                     INDEX idx_guard_name (guard_name)
-                )
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
             """);
             
             // Crear tabla roles
@@ -40,7 +40,7 @@ public class V1__CreatePermissionTable implements JavaMigration {
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                     UNIQUE KEY unique_role (name, guard_name),
                     INDEX idx_guard_name (guard_name)
-                )
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
             """);
             
             // Tabla pivote role_has_permissions
@@ -56,7 +56,7 @@ public class V1__CreatePermissionTable implements JavaMigration {
                         REFERENCES roles (id) ON DELETE CASCADE,
                     INDEX idx_permission_id (permission_id),
                     INDEX idx_role_id (role_id)
-                )
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
             """);
         }
     }

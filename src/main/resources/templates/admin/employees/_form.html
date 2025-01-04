@@ -32,7 +32,7 @@
                                     <div class="input-group-prepend">
                                         <span class="input-group-text"><i class="fas fa-user"></i></span>
                                     </div>
-                                    <input type="text" class="form-control" name="lastName" th:field="*{lastName}" required>
+                                    <input type="text" class="form-control" th:field="*{lastName}" required>
                                 </div>
                                 <div class="text-danger" th:if="${#fields.hasErrors('lastName')}" th:errors="*{lastName}"></div>
                             </div>
@@ -44,7 +44,7 @@
                                     <div class="input-group-prepend">
                                         <span class="input-group-text"><i class="fas fa-id-card"></i></span>
                                     </div>
-                                    <input type="text" class="form-control" name="documentNumber" th:field="*{documentNumber}" required 
+                                    <input type="text" class="form-control" th:field="*{documentNumber}" required 
                                            pattern="\d{8}" title="El DNI debe tener 8 dígitos">
                                 </div>
                                 <div class="text-danger" th:if="${#fields.hasErrors('documentNumber')}" th:errors="*{documentNumber}"></div>
@@ -73,10 +73,7 @@
                                     <div class="input-group-prepend">
                                         <span class="input-group-text"><i class="fas fa-calendar"></i></span>
                                     </div>
-                                    <input type="date" class="form-control" 
-                                           name="birthDate"
-                                           th:value="${employee.birthDate}"
-                                           required>
+                                    <input type="date" class="form-control" th:field="*{birthDate}" required>
                                 </div>
                                 <div class="text-danger" th:if="${#fields.hasErrors('birthDate')}" th:errors="*{birthDate}"></div>
                             </div>
@@ -99,7 +96,7 @@
                                     <div class="input-group-prepend">
                                         <span class="input-group-text"><i class="fas fa-envelope"></i></span>
                                     </div>
-                                    <input type="email" class="form-control" name="email" th:field="*{email}" required>
+                                    <input type="email" class="form-control" th:field="*{email}" required>
                                 </div>
                                 <div class="text-danger" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></div>
                             </div>
@@ -136,7 +133,8 @@
                                     <div class="input-group-prepend">
                                         <span class="input-group-text"><i class="fas fa-key"></i></span>
                                     </div>
-                                    <input type="password" class="form-control" th:field="*{password}" id="password" th:required="${employee.id == null}">
+                                    <input type="password" class="form-control" th:field="*{password}" id="password" 
+                                           th:required="${employee.id == null}">
                                 </div>
                                 <div class="text-danger" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></div>
                                 <small class="form-text text-muted" th:if="${employee.id != null}">
@@ -151,9 +149,7 @@
                                     <div class="input-group-prepend">
                                         <span class="input-group-text"><i class="fas fa-key"></i></span>
                                     </div>
-                                    <input type="password" class="form-control" 
-                                           name="confirmPassword"
-                                           id="confirmPassword" 
+                                    <input type="password" class="form-control" id="confirmPassword" 
                                            th:required="${employee.id == null}">
                                 </div>
                                 <div class="text-danger" id="passwordError"></div>
@@ -161,30 +157,20 @@
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label for="roles">Roles</label>
-                                <select class="form-control" id="roles" name="roles" required>
-                                    <option value="">Seleccione un rol</option>
-                                    <option th:each="role : ${roles}"
-                                            th:value="${role.name}"
-                                            th:text="${role.name}"
-                                            th:selected="${employee.roles != null and employee.roles.contains(role.name)}">
-                                        Rol
-                                    </option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label>Estado</label>
+                                <label>Rol <span class="text-danger">*</span></label>
                                 <div class="input-group">
                                     <div class="input-group-prepend">
-                                        <span class="input-group-text"><i class="fas fa-toggle-on"></i></span>
+                                        <span class="input-group-text"><i class="fas fa-user-tag"></i></span>
                                     </div>
-                                    <select class="form-control" th:field="*{active}">
-                                        <option value="true">Activo</option>
-                                        <option value="false">Inactivo</option>
+                                    <select class="form-control select2" th:field="*{roles}" required>
+                                        <option value="">Seleccione un rol</option>
+                                        <option th:each="role : ${roles}"
+                                                th:value="${role.name}"
+                                                th:text="${role.name}">
+                                        </option>
                                     </select>
                                 </div>
+                                <div class="text-danger" th:if="${#fields.hasErrors('roles')}" th:errors="*{roles}"></div>
                             </div>
                         </div>
                     </div>
@@ -194,80 +180,33 @@
             <!-- Botones -->
             <div class="card-footer text-right mt-4">
                 <a th:href="@{/admin/employees}" class="btn btn-secondary">
-                    <i class="fas fa-times mr-1"></i>Cancelar
+                    <i class="fas fa-times"></i> Cancelar
                 </a>
-                <button type="submit" class="btn btn-success ml-2">
-                    <i class="fas fa-save mr-1"></i>Guardar
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Guardar
                 </button>
             </div>
         </form>
 
         <script th:inline="javascript">
-        document.querySelector('form').addEventListener('submit', function(e) {
-            var password = document.getElementById('password').value;
-            var confirmPassword = document.getElementById('confirmPassword').value;
-            var isEditMode = /*[[${employee.id}]]*/ null != null;
-            
-            // En modo creación, las contraseñas deben coincidir
-            if (!isEditMode) {
+            document.querySelector('form').addEventListener('submit', function(e) {
+                var password = document.getElementById('password').value;
+                var confirmPassword = document.getElementById('confirmPassword').value;
+                
                 if (password !== confirmPassword) {
                     e.preventDefault();
                     document.getElementById('passwordError').textContent = 'Las contraseñas no coinciden';
-                    return false;
                 }
-                if (!password.trim() || !confirmPassword.trim()) {
-                    e.preventDefault();
-                    document.getElementById('passwordError').textContent = 'La contraseña es requerida';
-                    return false;
-                }
-            }
-            
-            // Resto del código para modo edición...
-        });
+            });
 
-        document.getElementById('confirmPassword').addEventListener('input', validatePassword);
-        document.getElementById('password').addEventListener('input', validatePassword);
-
-        function validatePassword() {
-            var password = document.getElementById('password').value;
-            var confirmPassword = document.getElementById('confirmPassword').value;
-            var errorDiv = document.getElementById('passwordError');
-            var submitButton = document.querySelector('button[type="submit"]');
-            
-            // En modo edición, si ambos campos están vacíos, permitir el envío
-            var isEditMode = /*[[${employee.id}]]*/ null != null;
-            if (isEditMode && !password.trim() && !confirmPassword.trim()) {
-                errorDiv.textContent = '';
-                submitButton.disabled = false;
-                return;
-            }
-            
-            // Solo validar si al menos uno de los campos tiene contenido
-            if (password.trim() || confirmPassword.trim()) {
-                if (password !== confirmPassword) {
-                    errorDiv.textContent = 'Las contraseñas no coinciden';
-                    submitButton.disabled = true;
-                } else {
-                    errorDiv.textContent = '';
-                    submitButton.disabled = false;
-                }
-            } else {
-                errorDiv.textContent = '';
-                submitButton.disabled = false;
-            }
-        }
-        </script>
-
-        <script>
+            // Inicializar Select2
             $(document).ready(function() {
                 $('.select2').select2({
                     theme: 'bootstrap4',
-                    placeholder: 'Seleccione un rol',
-                    allowClear: true,
                     width: '100%'
                 });
             });
         </script>
     </div>
 </body>
-</html> 
+</html>

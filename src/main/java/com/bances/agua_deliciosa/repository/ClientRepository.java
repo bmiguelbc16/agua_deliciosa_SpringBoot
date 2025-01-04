@@ -8,10 +8,10 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import com.bances.agua_deliciosa.model.Client;
 import org.springframework.lang.NonNull;
-
+import java.util.Optional;
 @Repository
 public interface ClientRepository extends JpaRepository<Client, Long> {
-    @Query("""
+    @Query( """
         SELECT DISTINCT c FROM Client c 
         JOIN FETCH c.user u 
         WHERE u.documentNumber LIKE %:search% 
@@ -22,7 +22,7 @@ public interface ClientRepository extends JpaRepository<Client, Long> {
 
     @Override
     @NonNull
-    @Query("""
+    @Query( """
         SELECT DISTINCT c FROM Client c 
         JOIN FETCH c.user u
     """)
@@ -43,4 +43,6 @@ public interface ClientRepository extends JpaRepository<Client, Long> {
         AND u.email = :email
     """, nativeQuery = true)
     boolean existsByEmail(@Param("email") String email);
+
+    Optional<Client> findByUserId(Long userId);
 }

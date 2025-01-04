@@ -1,32 +1,39 @@
 package com.bances.agua_deliciosa.dto.admin;
 
-import com.bances.agua_deliciosa.dto.base.BaseUserDTO;
+import java.time.LocalDate;
+import jakarta.validation.constraints.*;
+import lombok.Data;
 
-import lombok.Getter;
-import lombok.Setter;
+@Data
+public class EmployeeDTO {
+    private Long id;
 
-@Getter
-@Setter
-public class EmployeeDTO extends BaseUserDTO {
-    private String roles;  // Necesitamos este campo para el rol del empleado
-    
-    public EmployeeDTO() {
-        this.setActive(true);
-        this.setUserableType("Employee");
-    }
-    
-    @Override
-    public String toString() {
-        return "EmployeeDTO{" +
-            "id=" + getId() +
-            ", name='" + getName() + '\'' +
-            ", lastName='" + getLastName() + '\'' +
-            ", email='" + getEmail() + '\'' +
-            ", documentNumber='" + getDocumentNumber() + '\'' +
-            ", phoneNumber='" + getPhoneNumber() + '\'' +
-            ", roles='" + getRoles() + '\'' +
-            ", birthDate=" + getBirthDate() +
-            ", active=" + getActive() +
-            '}';
-    }
+    @NotBlank(message = "El nombre es requerido")
+    private String name;
+
+    @NotBlank(message = "El apellido es requerido")
+    private String lastName;
+
+    @NotBlank(message = "El email es requerido")
+    @Email(message = "El email debe ser válido")
+    private String email;
+
+    @NotBlank(message = "El número de documento es requerido")
+    @Pattern(regexp = "\\d{8}", message = "El DNI debe tener 8 dígitos")
+    private String documentNumber;
+
+    @NotBlank(message = "El número de teléfono es requerido")
+    @Pattern(regexp = "\\d{9}", message = "El teléfono debe tener 9 dígitos")
+    private String phoneNumber;
+
+    @NotNull(message = "La fecha de nacimiento es requerida")
+    private LocalDate birthDate;
+
+    @NotBlank(message = "El género es requerido")
+    private String gender;
+
+    private String password;
+
+    @NotBlank(message = "El rol es requerido")
+    private String roles;
 }

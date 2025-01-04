@@ -5,14 +5,11 @@ import lombok.Data;
 
 @Data
 public class PermissionDTO {
-    
     private Long id;
-    
-    @NotBlank(message = "El nombre es requerido")
+
+    @NotBlank(message = "El nombre del permiso es requerido")
     private String name;
-    
-    @NotBlank(message = "La descripción es requerida")
+
+    @NotBlank(message = "La descripción del permiso es requerida")
     private String description;
-    
-    private boolean active = true;
 }

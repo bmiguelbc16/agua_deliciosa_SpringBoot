@@ -4,8 +4,8 @@ import lombok.Data;
 
 @Data
 public class DashboardStats {
-    private long clientCount;
-    private long orderCount;
-    private long productCount;
-    private long employeeCount;
+    private long totalCustomers;
+    private long totalOrders;
+    private long totalProducts;
+    private long totalEmployees;
 } 

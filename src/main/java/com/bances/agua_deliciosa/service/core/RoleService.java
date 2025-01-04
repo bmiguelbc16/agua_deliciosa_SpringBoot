@@ -1,19 +1,14 @@
 package com.bances.agua_deliciosa.service.core;
 
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.HashSet;
-
+import com.bances.agua_deliciosa.model.Role;
+import com.bances.agua_deliciosa.repository.RoleRepository;
+import com.bances.agua_deliciosa.dto.admin.RoleDTO;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.bances.agua_deliciosa.dto.admin.RoleDTO;
-import com.bances.agua_deliciosa.model.Role;
-import com.bances.agua_deliciosa.model.Permission;
-import com.bances.agua_deliciosa.repository.RoleRepository;
-import com.bances.agua_deliciosa.repository.PermissionRepository;
-
-import lombok.RequiredArgsConstructor;
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @Transactional(readOnly = true)
@@ -21,89 +16,62 @@ import lombok.RequiredArgsConstructor;
 public class RoleService {
     
     private final RoleRepository roleRepository;
-    private final PermissionRepository permissionRepository;
-
-    public List<RoleDTO> listAll() {
-        return roleRepository.findAll().stream()
-            .map(this::toDTO)
-            .collect(Collectors.toList());
+    
+    public List<Role> getAllRoles() {
+        return roleRepository.findAll();
     }
 
-    public RoleDTO getById(Long id) {
-        Role role = roleRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Rol no encontrado"));
-        return toDTO(role);
+    public List<Role> listAll() {
+        return roleRepository.findAll();
     }
 
-    public Role getByName(String name) {
+    public Role findByName(String name) {
         return roleRepository.findByName(name)
             .orElseThrow(() -> new RuntimeException("Rol no encontrado: " + name));
     }
 
-    @Transactional
-    public RoleDTO create(RoleDTO dto) {
-        if (roleRepository.findByName(dto.getName()).isPresent()) {
-            throw new RuntimeException("El rol ya existe: " + dto.getName());
-        }
-
-        Role role = new Role();
-        updateRoleFromDTO(role, dto);
-        role = roleRepository.save(role);
-        return toDTO(role);
+    public Role getById(Long id) {
+        return roleRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Rol no encontrado con ID: " + id));
     }
 
     @Transactional
-    public RoleDTO update(Long id, RoleDTO dto) {
-        Role role = roleRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Rol no encontrado"));
+    public Role create(RoleDTO dto) {
+        if (roleRepository.existsByName(dto.getName())) {
+            throw new RuntimeException("Ya existe un rol con ese nombre");
+        }
+
+        Role role = new Role();
+        role.setName(dto.getName());
+        role.setCreatedAt(LocalDateTime.now());
+        
+        return roleRepository.save(role);
+    }
+
+    @Transactional
+    public Role update(Long id, RoleDTO dto) {
+        Role role = getById(id);
         
         if (!role.getName().equals(dto.getName()) && 
-            roleRepository.findByName(dto.getName()).isPresent()) {
-            throw new RuntimeException("El rol ya existe: " + dto.getName());
+            roleRepository.existsByName(dto.getName())) {
+            throw new RuntimeException("Ya existe un rol con ese nombre");
         }
+
+        role.setName(dto.getName());
+        role.setUpdatedAt(LocalDateTime.now());
         
-        updateRoleFromDTO(role, dto);
-        role = roleRepository.save(role);
-        return toDTO(role);
+        return roleRepository.save(role);
     }
 
     @Transactional
     public void delete(Long id) {
-        Role role = roleRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Rol no encontrado"));
+        Role role = getById(id);
         
-        if (role.getName().equals("Administrador")) {
-            throw new RuntimeException("No se puede eliminar el rol de Administrador");
+        // Verificar si hay usuarios usando este rol
+        if (role.getUsers() != null && !role.getUsers().isEmpty()) {
+            throw new RuntimeException("No se puede eliminar el rol porque está siendo usado por usuarios");
         }
         
         roleRepository.delete(role);
-    }
-
-    private void updateRoleFromDTO(Role role, RoleDTO dto) {
-        role.setName(dto.getName());
-        role.setDescription(dto.getDescription());
-        role.setActive(dto.isActive());
-        
-        if (dto.getPermissionIds() != null && !dto.getPermissionIds().isEmpty()) {
-            role.setPermissions(new HashSet<>(
-                permissionRepository.findAllById(dto.getPermissionIds())
-            ));
-        }
-    }
-
-    private RoleDTO toDTO(Role role) {
-        RoleDTO dto = new RoleDTO();
-        dto.setId(role.getId());
-        dto.setName(role.getName());
-        dto.setDescription(role.getDescription());
-        dto.setActive(role.isActive());
-        
-        if (role.getPermissions() != null) {
-            dto.setPermissionIds(role.getPermissions().stream()
-                .map(Permission::getId)
-                .collect(Collectors.toSet()));
-        }
-        
-        return dto;
     }
 }

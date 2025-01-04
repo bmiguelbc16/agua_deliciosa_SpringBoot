@@ -1,7 +1,6 @@
 package com.bances.agua_deliciosa.model;
 
 import java.time.LocalDateTime;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -11,6 +10,8 @@ import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import jakarta.persistence.JoinColumn;
+import org.hibernate.annotations.JoinFormula;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -24,13 +25,15 @@ public class Employee {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(nullable = false)
+    @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-    @OneToOne(mappedBy = "employee")
+    @OneToOne
+    @JoinColumn(name = "id", referencedColumnName = "userable_id", insertable = false, updatable = false)
+    @JoinFormula("userable_type = 'Employee'")
     private User user;
 
     @PrePersist

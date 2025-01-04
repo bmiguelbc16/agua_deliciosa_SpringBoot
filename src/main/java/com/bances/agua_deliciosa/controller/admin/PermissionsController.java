@@ -27,7 +27,7 @@ public class PermissionsController extends AdminController {
     public String index(Model model) {
         setupCommonAttributes(model, "permissions");
         model.addAttribute("title", "Gestión de Permisos");
-        model.addAttribute("permissions", permissionService.getAllPermissions());
+        model.addAttribute("permissions", permissionService.findAll());
         return view("permissions/index");
     }
 

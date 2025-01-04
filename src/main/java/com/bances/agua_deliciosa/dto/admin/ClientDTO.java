@@ -23,7 +23,7 @@ public class ClientDTO extends BaseUserDTO {
         super.afterPropertiesSet();
         // Buscar el ID del rol "Cliente" y asignarlo
         if (roleService != null) {
-            this.setRoleId(roleService.getByName("Cliente").getId());
+            this.setRoleId(roleService.findByName("Cliente").getId());
         }
     }
     

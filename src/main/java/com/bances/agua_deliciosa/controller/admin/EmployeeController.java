@@ -11,6 +11,7 @@ import com.bances.agua_deliciosa.util.Routes;
 import com.bances.agua_deliciosa.dto.admin.EmployeeDTO;
 import com.bances.agua_deliciosa.service.auth.SecurityService;
 import com.bances.agua_deliciosa.service.core.EmployeeService;
+import com.bances.agua_deliciosa.service.core.RoleService;
 
 import jakarta.validation.Valid;
 
@@ -19,10 +20,14 @@ import jakarta.validation.Valid;
 public class EmployeeController extends AdminController {
     
     private final EmployeeService employeeService;
+    private final RoleService roleService;
     
-    public EmployeeController(SecurityService securityService, EmployeeService employeeService) {
+    public EmployeeController(SecurityService securityService, 
+                            EmployeeService employeeService,
+                            RoleService roleService) {
         super(securityService);
         this.employeeService = employeeService;
+        this.roleService = roleService;
     }
 
     @GetMapping
@@ -42,6 +47,7 @@ public class EmployeeController extends AdminController {
         setupCommonAttributes(model, "employees");
         model.addAttribute("title", "Nuevo Empleado");
         model.addAttribute("employee", new EmployeeDTO());
+        model.addAttribute("roles", roleService.getAllRoles());
         return view("employees/create");
     }
 
@@ -65,6 +71,7 @@ public class EmployeeController extends AdminController {
         setupCommonAttributes(model, "employees");
         model.addAttribute("title", "Editar Empleado");
         model.addAttribute("employee", employeeService.getEmployeeById(id));
+        model.addAttribute("roles", roleService.getAllRoles());
         return view("employees/edit");
     }
 

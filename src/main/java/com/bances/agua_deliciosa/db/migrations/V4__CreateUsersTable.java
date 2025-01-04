@@ -1,9 +1,9 @@
 package com.bances.agua_deliciosa.db.migrations;
 
-import org.springframework.stereotype.Component;
 import org.flywaydb.core.api.migration.JavaMigration;
 import org.flywaydb.core.api.migration.Context;
 import org.flywaydb.core.api.MigrationVersion;
+import org.springframework.stereotype.Component;
 
 @Component
 public class V4__CreateUsersTable implements JavaMigration {
@@ -13,11 +13,11 @@ public class V4__CreateUsersTable implements JavaMigration {
             // Crear tabla users
             statement.execute("""
                 CREATE TABLE users (
-                    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                    id BIGINT NOT NULL AUTO_INCREMENT,
                     name VARCHAR(255) NOT NULL,
                     last_name VARCHAR(255) NOT NULL,
                     email VARCHAR(255) NOT NULL,
-                    document_number VARCHAR(20) UNIQUE,
+                    document_number VARCHAR(20),
                     birth_date DATE,
                     gender ENUM('M', 'F', 'O') NOT NULL,
                     phone_number VARCHAR(20),
@@ -27,14 +27,17 @@ public class V4__CreateUsersTable implements JavaMigration {
                     userable_type ENUM('Employee', 'Client') NOT NULL,
                     userable_id BIGINT NOT NULL,
                     active BOOLEAN NOT NULL DEFAULT TRUE,
+                    guard_name VARCHAR(125) NOT NULL DEFAULT 'web',
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    PRIMARY KEY (id),
                     UNIQUE KEY unique_email (email),
                     UNIQUE KEY unique_userable (userable_type, userable_id),
                     INDEX idx_document (document_number),
+                    INDEX idx_email (email),
                     CONSTRAINT fk_user_role FOREIGN KEY (role_id) 
                         REFERENCES roles (id) ON DELETE RESTRICT
-                ) ENGINE=InnoDB
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
             """);
 
             // Crear triggers para validar el userable_type
@@ -76,17 +79,19 @@ public class V4__CreateUsersTable implements JavaMigration {
                 END
             """);
 
-            // Crear tabla user_tokens (necesaria para autenticación)
+            // Crear tabla user_tokens
             statement.execute("""
                 CREATE TABLE user_tokens (
-                    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                    id BIGINT NOT NULL AUTO_INCREMENT,
                     user_id BIGINT NOT NULL,
                     token VARCHAR(64) NOT NULL,
                     expires_at TIMESTAMP NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (id),
                     UNIQUE KEY unique_token (token),
-                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-                )
+                    CONSTRAINT fk_user_tokens_user_id FOREIGN KEY (user_id) 
+                        REFERENCES users(id) ON DELETE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
             """);
         }
     }
@@ -103,7 +108,7 @@ public class V4__CreateUsersTable implements JavaMigration {
     }
 
     @Override
-    public String getDescription() { 
-        return "Create users and tokens tables";
+    public String getDescription() {
+        return "Create users and user_tokens tables";
     }
 }

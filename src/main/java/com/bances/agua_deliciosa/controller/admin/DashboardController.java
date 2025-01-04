@@ -26,7 +26,13 @@ public class DashboardController extends AdminController {
         log.info("Accediendo al dashboard de admin");
         setupCommonAttributes(model, "dashboard");
         model.addAttribute("title", "Dashboard | Agua Deliciosa");
-        model.addAttribute("stats", dashboardService.getStats());
+        
+        var dashboardData = dashboardService.getDashboardData();
+        model.addAttribute("stats", dashboardData.getStats());
+        model.addAttribute("recentOrders", dashboardData.getRecentOrders());
+        model.addAttribute("topProducts", dashboardData.getTopProducts());
+        model.addAttribute("topCustomers", dashboardData.getTopCustomers());
+        
         return "admin/dashboard/index";
     }
 }
