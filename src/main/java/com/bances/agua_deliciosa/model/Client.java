@@ -20,7 +20,7 @@ public class Client {
     private Long id;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id", referencedColumnName = "userable_id", insertable = false, updatable = false)
+    @JoinColumn(name = "id", referencedColumnName = "userable_id")
     private User user;
 
     @OneToMany(mappedBy = "client", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -41,5 +41,13 @@ public class Client {
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
+    }
+
+    @PostPersist
+    protected void afterPersist() {
+        if (user != null) {
+            user.setUserableType("Client");
+            user.setUserableId(this.id);
+        }
     }
 }

@@ -16,18 +16,12 @@ public class Employee {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne
-    @JoinColumn(name = "id", referencedColumnName = "userable_id", insertable = false, updatable = false)
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id", referencedColumnName = "userable_id")
     private User user;
 
     @OneToMany(mappedBy = "employee")
-    private Set<Order> orders = new HashSet<>();
-
-    @OneToMany(mappedBy = "employee")
-    private Set<ProductOutput> productOutputs = new HashSet<>();
-
-    @OneToMany(mappedBy = "employee")
-    private Set<ProductEntry> productEntries = new HashSet<>();
+    private Set<Order> assignedOrders = new HashSet<>();
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -49,7 +43,7 @@ public class Employee {
     @PostPersist
     protected void afterPersist() {
         if (user != null) {
-            user.setUserableType("App\\Models\\Employee");
+            user.setUserableType("Employee");
             user.setUserableId(this.id);
         }
     }
