@@ -18,7 +18,7 @@ public abstract class AdminController extends BaseController {
     }
 
     protected void setupCommonAttributes(Model model, String menuActive) {
-        model.addAttribute("currentUser", securityService.getCurrentUser());
+        model.addAttribute("currentUser", securityService.getUser());
         model.addAttribute("isAdmin", true);
         model.addAttribute("menuActive", menuActive);
     }

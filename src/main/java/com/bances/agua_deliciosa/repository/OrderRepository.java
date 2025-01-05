@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import com.bances.agua_deliciosa.model.Order;
+import com.bances.agua_deliciosa.model.OrderStatus;
 
 @Repository
 public interface OrderRepository extends JpaRepository<Order, Long> {
@@ -28,6 +29,11 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     List<Object[]> countByStatus();
     
     /**
+     * Cuenta el número de pedidos por estado
+     */
+    long countByStatus(OrderStatus status);
+    
+    /**
      * Encuentra los pedidos entre dos fechas
      */
     @Query("SELECT o FROM Order o WHERE o.createdAt BETWEEN :startDate AND :endDate")
@@ -40,7 +46,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
         SELECT 
             YEAR(created_at) as year,
             MONTH(created_at) as month,
-            SUM(total) as total
+            SUM(total_amount) as total
         FROM orders 
         WHERE created_at >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
         GROUP BY YEAR(created_at), MONTH(created_at)
@@ -68,7 +74,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
      */
     @Query(value = """
         SELECT c.id, CONCAT(u.name, ' ', u.last_name) as full_name, 
-        COUNT(o.id) as total_orders, SUM(o.total) as total_spent 
+        COUNT(o.id) as total_orders, SUM(o.total_amount) as total_spent 
         FROM orders o 
         JOIN clients c ON o.client_id = c.id 
         JOIN users u ON u.userable_id = c.id AND u.userable_type = 'Client'

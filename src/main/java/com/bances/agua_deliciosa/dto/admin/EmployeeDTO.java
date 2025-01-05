@@ -34,6 +34,9 @@ public class EmployeeDTO {
 
     private String password;
 
-    @NotBlank(message = "El rol es requerido")
-    private String roles;
+    @NotNull(message = "El rol es requerido")
+    private Long roleId;
+
+    @NotNull(message = "El estado es requerido")
+    private Boolean active = true;
 }

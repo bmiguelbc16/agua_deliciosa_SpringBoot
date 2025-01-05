@@ -2,18 +2,22 @@ package com.bances.agua_deliciosa.controller.auth;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.bances.agua_deliciosa.dto.auth.ResetPasswordDTO;
 import com.bances.agua_deliciosa.service.auth.AuthenticationService;
 import com.bances.agua_deliciosa.service.auth.SecurityService;
-import com.bances.agua_deliciosa.dto.auth.ResetPasswordDTO;
 
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Controller
-@RequestMapping("/auth/password")
+@RequestMapping("/forgot-password")
 public class ForgotPasswordController extends AuthController {
     
     private final AuthenticationService authService;
@@ -23,67 +27,70 @@ public class ForgotPasswordController extends AuthController {
         this.authService = authService;
     }
     
-    @GetMapping("/forgot")
+    @GetMapping
     public String showForgotForm(Model model) {
         setupCommonAttributes(model);
         return view("forgot-password");
     }
     
-    @PostMapping("/forgot")
-    public String sendResetLink(
+    @PostMapping("/request")
+    public String requestReset(
         @RequestParam @Valid String email,
         RedirectAttributes redirectAttributes
     ) {
         try {
             authService.initiatePasswordReset(email);
             addSuccessMessage(redirectAttributes, "Se ha enviado un enlace a tu correo");
+            return redirect("/login");
         } catch (Exception e) {
             addErrorMessage(redirectAttributes, e.getMessage());
+            return redirect("/forgot-password");
         }
-        return "redirect:/auth/password/forgot";
     }
-
+    
     @GetMapping("/reset")
     public String showResetForm(
-        @RequestParam String token,
-        @RequestParam String email,
+        @RequestParam(required = false) String token,
+        @RequestParam(required = false) String email,
         Model model,
         RedirectAttributes redirectAttributes
     ) {
+        if (token == null || token.isEmpty() || email == null || email.isEmpty()) {
+            setupCommonAttributes(model);
+            model.addAttribute("resetPasswordDTO", new ResetPasswordDTO());
+            return view("reset-password");
+        }
+        
         try {
             setupCommonAttributes(model);
-            ResetPasswordDTO resetPasswordDTO = new ResetPasswordDTO();
-            resetPasswordDTO.setToken(token);
-            resetPasswordDTO.setEmail(email);
-            model.addAttribute("resetPasswordDTO", resetPasswordDTO);
+            model.addAttribute("resetPasswordDTO", new ResetPasswordDTO());
+            model.addAttribute("token", token);
+            model.addAttribute("email", email);
             return view("reset-password");
         } catch (Exception e) {
             addErrorMessage(redirectAttributes, "El enlace ha expirado o no es válido");
-            return "redirect:/auth/password/forgot";
+            return redirect("/forgot-password");
         }
     }
-
+    
     @PostMapping("/reset")
-    public String resetPassword(
-        @Valid @ModelAttribute ResetPasswordDTO resetPasswordDTO,
-        BindingResult result,
-        RedirectAttributes redirectAttributes
-    ) {
-        if (result.hasErrors()) {
-            return view("reset-password");
-        }
-
+    public String resetPassword(@Valid ResetPasswordDTO resetPasswordDTO, RedirectAttributes redirectAttributes) {
         try {
             authService.resetPassword(
-                resetPasswordDTO.getEmail(),
                 resetPasswordDTO.getToken(),
+                resetPasswordDTO.getPassword(),
                 resetPasswordDTO.getPassword()
             );
-            addSuccessMessage(redirectAttributes, "Contraseña actualizada exitosamente");
-            return "redirect:/login";
+            addSuccessMessage(redirectAttributes, "Contraseña restablecida exitosamente");
+            return redirect("/login");
         } catch (Exception e) {
             addErrorMessage(redirectAttributes, e.getMessage());
-            return "redirect:/auth/password/forgot";
+            return redirect("/forgot-password");
         }
+    }
+    
+    @Override
+    protected String getViewPrefix() {
+        return "auth";
     }
 }

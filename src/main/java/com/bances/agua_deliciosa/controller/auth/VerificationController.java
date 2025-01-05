@@ -1,17 +1,20 @@
 package com.bances.agua_deliciosa.controller.auth;
 
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.bances.agua_deliciosa.service.auth.AuthenticationService;
 import com.bances.agua_deliciosa.service.auth.SecurityService;
 
-import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Controller
-@RequestMapping("/auth/verify")
+@RequestMapping("/verify")
 public class VerificationController extends AuthController {
     
     private final AuthenticationService authService;
@@ -21,37 +24,24 @@ public class VerificationController extends AuthController {
         this.authService = authService;
     }
     
-    @GetMapping
-    public String showVerificationForm(
-        @RequestParam String token,
-        @RequestParam String email,
+    @GetMapping("/email")
+    public String verifyEmail(
+        @RequestParam(required = false) String token,
+        @RequestParam(required = false) String email,
         Model model,
         RedirectAttributes redirectAttributes
     ) {
-        try {
+        if (token == null || token.isEmpty()) {
             setupCommonAttributes(model);
-            model.addAttribute("token", token);
-            model.addAttribute("email", email);
             return view("verify-email");
-        } catch (Exception e) {
-            addErrorMessage(redirectAttributes, "El enlace ha expirado o no es válido");
-            return "redirect:/login";
         }
-    }
-    
-    @PostMapping
-    public String verifyEmail(
-        @RequestParam @Valid String email,
-        @RequestParam @Valid String token,
-        RedirectAttributes redirectAttributes
-    ) {
+        
         try {
-            authService.verifyEmail(email, token);
+            authService.verifyEmail(token, email);
             addSuccessMessage(redirectAttributes, "Email verificado exitosamente");
-            return "redirect:/login";
+            return redirect("/login");
         } catch (Exception e) {
-            addErrorMessage(redirectAttributes, e.getMessage());
-            return "redirect:/auth/verify?token=" + token + "&email=" + email;
+            return handleAuthError(e, redirectAttributes, "/verify/email");
         }
     }
 }

@@ -6,6 +6,31 @@ import org.flywaydb.core.api.migration.Context;
 import org.flywaydb.core.api.MigrationVersion;
 import java.sql.Statement;
 
+/**
+ * Migración para crear las tablas del sistema de permisos.
+ * 
+ * 1. Tabla permissions:
+ * - Campos principales: name, description, guard_name, active
+ * - Claves únicas: (name, guard_name)
+ * - Índices: guard_name
+ * - Timestamps automáticos
+ * 
+ * 2. Tabla roles:
+ * - Campos principales: name, description, guard_name
+ * - Claves únicas: (name, guard_name)
+ * - Índices: guard_name
+ * - Timestamps automáticos
+ * 
+ * 3. Tabla role_has_permissions:
+ * - Tabla pivote many-to-many
+ * - Claves foráneas: permission_id, role_id
+ * - Índices en ambas claves foráneas
+ * - Eliminación en cascada
+ * 
+ * Se relaciona con:
+ * - users: a través de role_id
+ * Implementa: Control de Acceso Basado en Roles (RBAC)
+ */
 @Component
 public class V1__CreatePermissionTable implements JavaMigration {
     

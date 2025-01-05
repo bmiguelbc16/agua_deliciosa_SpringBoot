@@ -1,50 +1,56 @@
 package com.bances.agua_deliciosa.model;
 
 import java.time.LocalDateTime;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
-import jakarta.persistence.Table;
-import jakarta.persistence.JoinColumn;
-import org.hibernate.annotations.JoinFormula;
-import lombok.Getter;
-import lombok.Setter;
+import java.util.HashSet;
+import java.util.Set;
 
+import jakarta.persistence.*;
+import lombok.Data;
+
+@Data
 @Entity
 @Table(name = "employees")
-@Getter
-@Setter
 public class Employee {
-
+    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt;
-
     @OneToOne
     @JoinColumn(name = "id", referencedColumnName = "userable_id", insertable = false, updatable = false)
-    @JoinFormula("userable_type = 'Employee'")
     private User user;
 
+    @OneToMany(mappedBy = "employee")
+    private Set<Order> orders = new HashSet<>();
+
+    @OneToMany(mappedBy = "employee")
+    private Set<ProductOutput> productOutputs = new HashSet<>();
+
+    @OneToMany(mappedBy = "employee")
+    private Set<ProductEntry> productEntries = new HashSet<>();
+
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
     @PrePersist
-    public void prePersist() {
-        LocalDateTime now = LocalDateTime.now();
-        this.createdAt = now;
-        this.updatedAt = now;
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
     }
 
     @PreUpdate
-    public void preUpdate() {
-        this.updatedAt = LocalDateTime.now();
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
+
+    @PostPersist
+    protected void afterPersist() {
+        if (user != null) {
+            user.setUserableType("App\\Models\\Employee");
+            user.setUserableId(this.id);
+        }
     }
 }

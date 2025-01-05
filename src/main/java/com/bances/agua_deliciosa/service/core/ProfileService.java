@@ -3,37 +3,53 @@ package com.bances.agua_deliciosa.service.core;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.bances.agua_deliciosa.dto.admin.ProfileDTO;
 import com.bances.agua_deliciosa.model.User;
 import com.bances.agua_deliciosa.repository.UserRepository;
 import com.bances.agua_deliciosa.service.auth.SecurityService;
-import com.bances.agua_deliciosa.dto.admin.ProfileDTO;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
-@Transactional(readOnly = true)
+@RequiredArgsConstructor
 public class ProfileService {
-    
+
     private final UserRepository userRepository;
     private final SecurityService securityService;
 
-    public ProfileService(UserRepository userRepository, SecurityService securityService) {
-        this.userRepository = userRepository;
-        this.securityService = securityService;
-    }
+    @Transactional(readOnly = true)
+    public ProfileDTO getProfile() {
+        User user = securityService.getUser();
+        if (user == null) {
+            throw new RuntimeException("User not found");
+        }
 
-    public ProfileDTO getCurrentUserProfile() {
-        User currentUser = securityService.getCurrentUser();
-        return convertToDTO(currentUser);
+        ProfileDTO profile = new ProfileDTO();
+        profile.setId(user.getId());
+        profile.setName(user.getName());
+        profile.setLastName(user.getLastName());
+        profile.setEmail(user.getEmail());
+        profile.setDocumentNumber(user.getDocumentNumber());
+        profile.setBirthDate(user.getBirthDate());
+        profile.setGender(user.getGender().name());
+        profile.setPhoneNumber(user.getPhoneNumber());
+        profile.setRoleName(user.getRole().getName());
+
+        return profile;
     }
 
     @Transactional
-    public void updateProfile(ProfileDTO dto) {
-        User user = securityService.getCurrentUser();
-        // Actualizar campos del usuario con los datos del DTO
-        userRepository.save(user);
-    }
+    public ProfileDTO updateProfile(ProfileDTO dto) {
+        User user = securityService.getUser();
+        if (user == null) {
+            throw new RuntimeException("User not found");
+        }
 
-    private ProfileDTO convertToDTO(User user) {
-        // Implementar conversión de User a ProfileDTO
-        return new ProfileDTO();
+        user.setName(dto.getName());
+        user.setLastName(dto.getLastName());
+        user.setPhoneNumber(dto.getPhoneNumber());
+
+        userRepository.save(user);
+        return getProfile();
     }
-} 
+}

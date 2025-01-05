@@ -1,58 +1,52 @@
 package com.bances.agua_deliciosa.model;
 
-import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.Set;
 
-@Entity
-@Table(name = "permissions")
-@Getter
-@Setter
-public class Permission {
+import jakarta.persistence.*;
+import lombok.Data;
 
+@Data
+@Entity
+@Table(name = "permissions", uniqueConstraints = {
+    @UniqueConstraint(name = "unique_permission", columnNames = {"name", "guard_name"})
+})
+public class Permission {
+    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
-    private String name;  // Nombre del permiso, por ejemplo "VIEW_DASHBOARD"
+    @Column(nullable = false, length = 125)
+    private String name;
 
     @Column
-    private String description;  // Descripción del permiso
+    private String description;
 
-    @Column(name = "guard_name", nullable = false)
-    private String guardName = "web";  // Valor por defecto para el guard
+    @Column(name = "guard_name", nullable = false, length = 125)
+    private String guardName = "web";
 
     @Column(nullable = false)
     private boolean active = true;
 
-    @Column(nullable = false)
+    @ManyToMany(mappedBy = "permissions")
+    private Set<Role> roles = new HashSet<>();
+
+    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(nullable = false)
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    // Relación muchos a muchos con roles (tabla intermedia role_has_permissions)
-    @ManyToMany
-    @JoinTable(
-            name = "role_has_permissions", // Nombre de la tabla intermedia
-            joinColumns = @JoinColumn(name = "permission_id"), // Columna para permisos
-            inverseJoinColumns = @JoinColumn(name = "role_id") // Columna para roles
-    )
-    private Set<Role> roles;
-
     @PrePersist
-    public void prePersist() {
-        LocalDateTime now = LocalDateTime.now();
-        this.createdAt = now;
-        this.updatedAt = now;
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
     }
 
     @PreUpdate
-    public void preUpdate() {
-        this.updatedAt = LocalDateTime.now();
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
     }
 }

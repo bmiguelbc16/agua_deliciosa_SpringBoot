@@ -6,6 +6,7 @@ import com.bances.agua_deliciosa.dto.client.OrderDTO;
 import com.bances.agua_deliciosa.model.Order;
 import com.bances.agua_deliciosa.model.Client;
 import com.bances.agua_deliciosa.model.User;
+import com.bances.agua_deliciosa.model.OrderStatus;
 import com.bances.agua_deliciosa.repository.OrderRepository;
 import com.bances.agua_deliciosa.repository.ClientRepository;
 import com.bances.agua_deliciosa.service.auth.SecurityService;
@@ -23,7 +24,10 @@ public class OrderService {
     private final SecurityService securityService;
 
     private Client getCurrentClient() {
-        User user = securityService.getCurrentUser();
+        User user = securityService.getUser();
+        if (user == null) {
+            throw new RuntimeException("User not found");
+        }
         return clientRepository.findByUserId(user.getId())
             .orElseThrow(() -> new RuntimeException("Current user is not a client"));
     }
@@ -33,6 +37,7 @@ public class OrderService {
         Client client = getCurrentClient();
         Order order = new Order();
         order.setClient(client);
+        order.setStatus(OrderStatus.PENDING);
         // Aquí agregarías la lógica para establecer los productos y cantidades
         return orderRepository.save(order);
     }
@@ -56,7 +61,7 @@ public class OrderService {
     @Transactional
     public void cancelOrder(Long id) {
         Order order = getOrder(id);
-        order.setStatus("CANCELLED");
+        order.setStatus(OrderStatus.CANCELLED);
         orderRepository.save(order);
     }
 }

@@ -2,12 +2,12 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <body>
     <div th:fragment="form">
-        <form th:action="${employee.id != null} ? @{/admin/employees/{id}(id=${employee.id})} : @{/admin/employees}" 
+        <form th:action="@{${employee.id != null ? '/admin/employees/' + employee.id + '/update' : '/admin/employees/create'}}" 
               th:object="${employee}" 
-              method="post" 
-              class="needs-validation">
+              method="post">
+            
             <!-- Información Personal -->
-            <div class="card card-primary">
+            <div class="card">
                 <div class="card-header">
                     <h3 class="card-title"><i class="fas fa-user mr-2"></i>Información Personal</h3>
                 </div>
@@ -15,7 +15,7 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label>Nombres <span class="text-danger">*</span></label>
+                                <label for="name">Nombre</label>
                                 <div class="input-group">
                                     <div class="input-group-prepend">
                                         <span class="input-group-text"><i class="fas fa-user"></i></span>
@@ -27,7 +27,7 @@
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label>Apellidos <span class="text-danger">*</span></label>
+                                <label for="lastName">Apellido</label>
                                 <div class="input-group">
                                     <div class="input-group-prepend">
                                         <span class="input-group-text"><i class="fas fa-user"></i></span>
@@ -37,9 +37,11 @@
                                 <div class="text-danger" th:if="${#fields.hasErrors('lastName')}" th:errors="*{lastName}"></div>
                             </div>
                         </div>
+                    </div>
+                    <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label>DNI <span class="text-danger">*</span></label>
+                                <label for="documentNumber">DNI</label>
                                 <div class="input-group">
                                     <div class="input-group-prepend">
                                         <span class="input-group-text"><i class="fas fa-id-card"></i></span>
@@ -52,7 +54,7 @@
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label>Género <span class="text-danger">*</span></label>
+                                <label for="gender">Género</label>
                                 <div class="input-group">
                                     <div class="input-group-prepend">
                                         <span class="input-group-text"><i class="fas fa-venus-mars"></i></span>
@@ -66,9 +68,11 @@
                                 <div class="text-danger" th:if="${#fields.hasErrors('gender')}" th:errors="*{gender}"></div>
                             </div>
                         </div>
+                    </div>
+                    <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label>Fecha de Nacimiento <span class="text-danger">*</span></label>
+                                <label for="birthDate">Fecha de Nacimiento</label>
                                 <div class="input-group">
                                     <div class="input-group-prepend">
                                         <span class="input-group-text"><i class="fas fa-calendar"></i></span>
@@ -83,7 +87,7 @@
             </div>
 
             <!-- Información de Contacto -->
-            <div class="card card-info mt-4">
+            <div class="card mt-4">
                 <div class="card-header">
                     <h3 class="card-title"><i class="fas fa-address-card mr-2"></i>Información de Contacto</h3>
                 </div>
@@ -91,7 +95,7 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label>Email <span class="text-danger">*</span></label>
+                                <label for="email">Email</label>
                                 <div class="input-group">
                                     <div class="input-group-prepend">
                                         <span class="input-group-text"><i class="fas fa-envelope"></i></span>
@@ -103,14 +107,13 @@
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label>Teléfono <span class="text-danger">*</span></label>
+                                <label for="phoneNumber">Teléfono</label>
                                 <div class="input-group">
                                     <div class="input-group-prepend">
                                         <span class="input-group-text"><i class="fas fa-phone"></i></span>
                                     </div>
                                     <input type="tel" class="form-control" th:field="*{phoneNumber}" 
-                                           pattern="\d{9}" title="El teléfono debe tener 9 dígitos"
-                                           placeholder="Ejemplo: 999999999" required>
+                                           pattern="\d{9}" title="El teléfono debe tener 9 dígitos" required>
                                 </div>
                                 <div class="text-danger" th:if="${#fields.hasErrors('phoneNumber')}" th:errors="*{phoneNumber}"></div>
                             </div>
@@ -120,7 +123,7 @@
             </div>
 
             <!-- Información de Cuenta -->
-            <div class="card card-success mt-4">
+            <div class="card mt-4">
                 <div class="card-header">
                     <h3 class="card-title"><i class="fas fa-lock mr-2"></i>Información de Cuenta</h3>
                 </div>
@@ -128,49 +131,31 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label>Contraseña <span th:if="${employee.id == null}" class="text-danger">*</span></label>
-                                <div class="input-group">
-                                    <div class="input-group-prepend">
-                                        <span class="input-group-text"><i class="fas fa-key"></i></span>
-                                    </div>
-                                    <input type="password" class="form-control" th:field="*{password}" id="password" 
-                                           th:required="${employee.id == null}">
-                                </div>
-                                <div class="text-danger" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></div>
-                                <small class="form-text text-muted" th:if="${employee.id != null}">
-                                    Dejar en blanco para mantener la contraseña actual
-                                </small>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label>Confirmar Contraseña <span th:if="${employee.id == null}" class="text-danger">*</span></label>
-                                <div class="input-group">
-                                    <div class="input-group-prepend">
-                                        <span class="input-group-text"><i class="fas fa-key"></i></span>
-                                    </div>
-                                    <input type="password" class="form-control" id="confirmPassword" 
-                                           th:required="${employee.id == null}">
-                                </div>
-                                <div class="text-danger" id="passwordError"></div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label>Rol <span class="text-danger">*</span></label>
+                                <label for="roleId">Rol</label>
                                 <div class="input-group">
                                     <div class="input-group-prepend">
                                         <span class="input-group-text"><i class="fas fa-user-tag"></i></span>
                                     </div>
-                                    <select class="form-control select2" th:field="*{roles}" required>
+                                    <select class="form-control select2" th:field="*{roleId}" required>
                                         <option value="">Seleccione un rol</option>
                                         <option th:each="role : ${roles}"
-                                                th:value="${role.name}"
-                                                th:text="${role.name}">
-                                        </option>
+                                                th:value="${role.id}"
+                                                th:text="${role.name}">Rol</option>
                                     </select>
                                 </div>
-                                <div class="text-danger" th:if="${#fields.hasErrors('roles')}" th:errors="*{roles}"></div>
+                                <div class="text-danger" th:if="${#fields.hasErrors('roleId')}" th:errors="*{roleId}"></div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="active">Estado</label>
+                                <div class="custom-control custom-switch">
+                                    <input type="checkbox" class="custom-control-input" th:field="*{active}" id="active">
+                                    <label class="custom-control-label" for="active">
+                                        <span th:text="${employee.active ? 'Activo' : 'Inactivo'}">Activo</span>
+                                    </label>
+                                </div>
+                                <div class="text-danger" th:if="${#fields.hasErrors('active')}" th:errors="*{active}"></div>
                             </div>
                         </div>
                     </div>
@@ -187,26 +172,6 @@
                 </button>
             </div>
         </form>
-
-        <script th:inline="javascript">
-            document.querySelector('form').addEventListener('submit', function(e) {
-                var password = document.getElementById('password').value;
-                var confirmPassword = document.getElementById('confirmPassword').value;
-                
-                if (password !== confirmPassword) {
-                    e.preventDefault();
-                    document.getElementById('passwordError').textContent = 'Las contraseñas no coinciden';
-                }
-            });
-
-            // Inicializar Select2
-            $(document).ready(function() {
-                $('.select2').select2({
-                    theme: 'bootstrap4',
-                    width: '100%'
-                });
-            });
-        </script>
     </div>
 </body>
 </html>

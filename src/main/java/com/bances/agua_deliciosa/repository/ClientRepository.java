@@ -7,41 +7,53 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import com.bances.agua_deliciosa.model.Client;
-import org.springframework.lang.NonNull;
 import java.util.Optional;
+
 @Repository
 public interface ClientRepository extends JpaRepository<Client, Long> {
-    @Query( """
-        SELECT DISTINCT c FROM Client c 
-        JOIN FETCH c.user u 
-        WHERE u.documentNumber LIKE %:search% 
-           OR u.name LIKE %:search% 
-           OR u.lastName LIKE %:search%
-    """)
-    Page<Client> findBySearchTerm(@Param("search") String search, Pageable pageable);
-
-    @Override
-    @NonNull
-    @Query( """
-        SELECT DISTINCT c FROM Client c 
-        JOIN FETCH c.user u
-    """)
-    Page<Client> findAll(@NonNull Pageable pageable);
+    
+    @Query(value = """
+            SELECT DISTINCT c FROM Client c 
+            JOIN FETCH c.user u 
+            LEFT JOIN FETCH u.role r 
+            WHERE u.userableType = 'Client'
+            AND (:search IS NULL 
+                OR u.documentNumber LIKE CONCAT('%', :search, '%')
+                OR u.name LIKE CONCAT('%', :search, '%')
+                OR u.lastName LIKE CONCAT('%', :search, '%'))
+            ORDER BY c.id DESC
+            """, 
+          countQuery = """
+            SELECT COUNT(DISTINCT c) FROM Client c 
+            JOIN c.user u 
+            WHERE u.userableType = 'Client'
+            AND (:search IS NULL 
+                OR u.documentNumber LIKE CONCAT('%', :search, '%')
+                OR u.name LIKE CONCAT('%', :search, '%')
+                OR u.lastName LIKE CONCAT('%', :search, '%'))
+            """)
+    Page<Client> findByUserUserableTypeAndSearchTerm(@Param("search") String search, Pageable pageable);
 
     @Query(value = """
-        SELECT COUNT(*) > 0 FROM clients c 
-        INNER JOIN users u ON c.id = u.userable_id 
-        WHERE u.userable_type = 'Client'
-        AND u.document_number = :documentNumber
-    """, nativeQuery = true)
+            SELECT DISTINCT c FROM Client c 
+            JOIN FETCH c.user u 
+            LEFT JOIN FETCH u.role r 
+            WHERE u.userableType = 'Client'
+            ORDER BY c.id DESC
+            """,
+          countQuery = """
+            SELECT COUNT(DISTINCT c) FROM Client c 
+            JOIN c.user u 
+            WHERE u.userableType = 'Client'
+            """)
+    Page<Client> findByUserUserableType(Pageable pageable);
+
+    @Query("SELECT CASE WHEN COUNT(c) > 0 THEN true ELSE false END FROM Client c " +
+           "JOIN c.user u WHERE u.documentNumber = :documentNumber")
     boolean existsByDocumentNumber(@Param("documentNumber") String documentNumber);
 
-    @Query(value = """
-        SELECT COUNT(*) > 0 FROM clients c 
-        INNER JOIN users u ON c.id = u.userable_id 
-        WHERE u.userable_type = 'Client'
-        AND u.email = :email
-    """, nativeQuery = true)
+    @Query("SELECT CASE WHEN COUNT(c) > 0 THEN true ELSE false END FROM Client c " +
+           "JOIN c.user u WHERE u.email = :email")
     boolean existsByEmail(@Param("email") String email);
 
     Optional<Client> findByUserId(Long userId);

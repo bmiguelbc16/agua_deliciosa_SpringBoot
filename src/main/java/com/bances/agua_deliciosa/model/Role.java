@@ -1,55 +1,53 @@
 package com.bances.agua_deliciosa.model;
 
-import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Set;
 
+import jakarta.persistence.*;
+import lombok.Data;
+
+@Data
 @Entity
-@Table(name = "roles")
-@Getter
-@Setter
-@NoArgsConstructor
+@Table(name = "roles", uniqueConstraints = {
+    @UniqueConstraint(name = "unique_role", columnNames = {"name", "guard_name"})
+})
 public class Role {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, nullable = false)
+    @Column(nullable = false, length = 125)
     private String name;
 
+    @Column
     private String description;
 
-    @Column(name = "guard_name")
+    @Column(name = "guard_name", nullable = false, length = 125)
     private String guardName = "web";
 
-    @OneToMany(mappedBy = "role")
-    private List<User> users;
-
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany
     @JoinTable(
         name = "role_has_permissions",
         joinColumns = @JoinColumn(name = "role_id"),
         inverseJoinColumns = @JoinColumn(name = "permission_id")
     )
-    private Set<Permission> permissions;
+    private Set<Permission> permissions = new HashSet<>();
 
+    @OneToMany(mappedBy = "role")
+    private Set<User> users = new HashSet<>();
+
+    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
 
-    public Role(String name, String description) {
-        this.name = name;
-        this.description = description;
-        this.createdAt = LocalDateTime.now();
-    }
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
     }
 
     @PreUpdate

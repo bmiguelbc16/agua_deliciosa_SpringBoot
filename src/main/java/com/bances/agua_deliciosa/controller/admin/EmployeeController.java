@@ -1,107 +1,95 @@
 package com.bances.agua_deliciosa.controller.admin;
 
+import java.util.HashMap;
+import java.util.Map;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PageableDefault;
+import org.springframework.data.domain.Sort;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
-import com.bances.agua_deliciosa.util.Routes;
 import com.bances.agua_deliciosa.dto.admin.EmployeeDTO;
+import com.bances.agua_deliciosa.model.Employee;
 import com.bances.agua_deliciosa.service.auth.SecurityService;
 import com.bances.agua_deliciosa.service.core.EmployeeService;
-import com.bances.agua_deliciosa.service.core.RoleService;
 
 import jakarta.validation.Valid;
 
 @Controller
-@RequestMapping(Routes.Admin.EMPLOYEES)
+@RequestMapping("/admin/employees")
+@PreAuthorize("hasRole('Admin')")
 public class EmployeeController extends AdminController {
-    
+
     private final EmployeeService employeeService;
-    private final RoleService roleService;
-    
-    public EmployeeController(SecurityService securityService, 
-                            EmployeeService employeeService,
-                            RoleService roleService) {
+
+    public EmployeeController(SecurityService securityService, EmployeeService employeeService) {
         super(securityService);
         this.employeeService = employeeService;
-        this.roleService = roleService;
     }
 
     @GetMapping
     public String index(
-        @RequestParam(required = false) String search,
-        @PageableDefault(size = 10) Pageable pageable,
-        Model model
-    ) {
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            Model model) {
+        
         setupCommonAttributes(model, "employees");
-        model.addAttribute("title", "Gestión de Empleados");
-        model.addAttribute("employees", employeeService.getEmployeesPage(pageable));
-        return view("employees/index");
+        
+        Pageable paging = PageRequest.of(page, size, Sort.by("id").descending());
+        Page<Employee> employeePage = employeeService.getEmployeesPage(paging);
+
+        model.addAttribute("employees", employeePage);
+        model.addAttribute("currentPage", employeePage.getNumber());
+        model.addAttribute("totalItems", employeePage.getTotalElements());
+        model.addAttribute("totalPages", employeePage.getTotalPages());
+
+        return "admin/employees/index";
     }
 
-    @GetMapping("/create")
-    public String create(Model model) {
-        setupCommonAttributes(model, "employees");
-        model.addAttribute("title", "Nuevo Empleado");
-        model.addAttribute("employee", new EmployeeDTO());
-        model.addAttribute("roles", roleService.getAllRoles());
-        return view("employees/create");
+    @GetMapping("/api")
+    @ResponseBody
+    public Map<String, Object> getEmployees(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        
+        Pageable paging = PageRequest.of(page, size, Sort.by("id").descending());
+        Page<Employee> employeePage = employeeService.getEmployeesPage(paging);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("employees", employeePage.getContent());
+        response.put("currentPage", employeePage.getNumber());
+        response.put("totalItems", employeePage.getTotalElements());
+        response.put("totalPages", employeePage.getTotalPages());
+
+        return response;
     }
 
-    @PostMapping("/create")
-    public String store(
-        @Valid @ModelAttribute("employee") EmployeeDTO dto,
-        RedirectAttributes redirectAttributes
-    ) {
-        try {
-            employeeService.createEmployee(dto);
-            addSuccessMessage(redirectAttributes, "Empleado creado exitosamente");
-        } catch (Exception e) {
-            addErrorMessage(redirectAttributes, "Error al crear el empleado: " + e.getMessage());
-            return redirect("create");
-        }
-        return redirect("");
+    @PostMapping
+    @ResponseBody
+    public Employee create(@Valid @RequestBody EmployeeDTO employeeDTO) {
+        return employeeService.createEmployee(employeeDTO);
     }
 
-    @GetMapping("/{id}/edit")
-    public String edit(@PathVariable Long id, Model model) {
-        setupCommonAttributes(model, "employees");
-        model.addAttribute("title", "Editar Empleado");
-        model.addAttribute("employee", employeeService.getEmployeeById(id));
-        model.addAttribute("roles", roleService.getAllRoles());
-        return view("employees/edit");
+    @PutMapping("/{id}")
+    @ResponseBody
+    public Employee update(@PathVariable Long id, @Valid @RequestBody EmployeeDTO employeeDTO) {
+        return employeeService.updateEmployee(id, employeeDTO);
     }
 
-    @PostMapping("/{id}/update")
-    public String update(
-        @PathVariable Long id,
-        @Valid @ModelAttribute("employee") EmployeeDTO dto,
-        RedirectAttributes redirectAttributes
-    ) {
-        try {
-            employeeService.update(id, dto);
-            addSuccessMessage(redirectAttributes, "Empleado actualizado exitosamente");
-        } catch (Exception e) {
-            addErrorMessage(redirectAttributes, "Error al actualizar el empleado: " + e.getMessage());
-            return redirect(id + "/edit");
-        }
-        return redirect("");
-    }
-
-    @PostMapping("/{id}/delete")
-    public String delete(
-        @PathVariable Long id,
-        RedirectAttributes redirectAttributes
-    ) {
-        try {
-            employeeService.deleteEmployee(id);
-            addSuccessMessage(redirectAttributes, "Empleado eliminado exitosamente");
-        } catch (Exception e) {
-            addErrorMessage(redirectAttributes, "Error al eliminar el empleado: " + e.getMessage());
-        }
-        return redirect("");
+    @DeleteMapping("/{id}")
+    @ResponseBody
+    public void delete(@PathVariable Long id) {
+        employeeService.deleteEmployee(id);
     }
 }

@@ -15,7 +15,7 @@ public abstract class AuthController extends BaseController {
     
     protected void setupCommonAttributes(Model model) {
         Authentication auth = securityService.getCurrentAuthentication();
-        model.addAttribute("currentUser", securityService.getCurrentUser());
+        model.addAttribute("currentUser", securityService.getUser());
         model.addAttribute("isAuthenticated", auth != null && auth.isAuthenticated());
         model.addAttribute("userRoles", securityService.getCurrentUserRoles());
     }

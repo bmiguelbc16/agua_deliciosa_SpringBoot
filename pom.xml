@@ -3,130 +3,171 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <!-- Configuración del padre del proyecto -->
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.4.1</version> <!-- Cambiar a esta versión estable -->
+        <version>3.4.1</version> <!-- Versión más reciente -->
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
 
+    <!-- Información del proyecto -->
     <groupId>com.bances</groupId>
     <artifactId>agua_deliciosa</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>agua_deliciosa</name>
     <description>Sistema de gestión para Agua Deliciosa</description>
 
+    <!-- Propiedades del proyecto -->
     <properties>
-        <java.version>21</java.version> <!-- Usa la versión adecuada para tu entorno -->
+        <java.version>21</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <!-- Versiones de dependencias -->
+        <jwt.version>0.11.5</jwt.version>
+        <hibernate.version>6.4.1.Final</hibernate.version>
+        <javax.annotation.version>1.3.2</javax.annotation.version>
+        <modelmapper.version>3.1.1</modelmapper.version>
     </properties>
 
     <dependencies>
-        <!-- SPRING BOOT DEPENDENCIES -->
+        <!-- SPRING BOOT CORE - Componentes principales de Spring Boot -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
+            <!-- Proporciona soporte para JPA (Java Persistence API) -->
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-mail</artifactId>
+            <!-- Facilita el envío de correos electrónicos -->
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
+            <!-- Implementa características de seguridad y autenticación -->
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-thymeleaf</artifactId>
+            <!-- Motor de plantillas para vistas web -->
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
+            <!-- Proporciona validación de datos -->
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
+            <!-- Funcionalidades para desarrollo web -->
         </dependency>
 
-        <!-- DATABASE -->
+        <!-- SEGURIDAD Y JWT - Componentes para autenticación y autorización -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+            <version>${jwt.version}</version>
+            <!-- API principal para JWT -->
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <version>${jwt.version}</version>
+            <scope>runtime</scope>
+            <!-- Implementación de JWT -->
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <version>${jwt.version}</version>
+            <scope>runtime</scope>
+            <!-- Soporte Jackson para JWT -->
+        </dependency>
+        <dependency>
+            <groupId>org.thymeleaf.extras</groupId>
+            <artifactId>thymeleaf-extras-springsecurity6</artifactId>
+            <!-- Integración de Thymeleaf con Spring Security -->
+        </dependency>
+
+        <!-- BASE DE DATOS - Componentes para acceso a datos -->
         <dependency>
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
             <scope>runtime</scope>
+            <!-- Conector para MySQL -->
+        </dependency>
+        <dependency>
+            <groupId>org.hibernate.orm</groupId>
+            <artifactId>hibernate-core</artifactId>
+            <version>${hibernate.version}</version>
+            <!-- Framework ORM para mapeo objeto-relacional -->
         </dependency>
 
-        <!-- MIGRATION TOOL -->
+        <!-- MIGRACIÓN DE BASE DE DATOS - Herramientas para control de versiones de BD -->
         <dependency>
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-core</artifactId>
+            <!-- Core de Flyway para migraciones de BD -->
         </dependency>
         <dependency>
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-mysql</artifactId>
+            <!-- Soporte específico de Flyway para MySQL -->
         </dependency>
 
-        <!-- SECURITY -->
-        <dependency>
-            <groupId>org.thymeleaf.extras</groupId>
-            <artifactId>thymeleaf-extras-springsecurity6</artifactId>
-        </dependency>
-
-        <!-- UTILITIES -->
+        <!-- UTILIDADES - Herramientas y bibliotecas de utilidad -->
         <dependency>
             <groupId>org.modelmapper</groupId>
             <artifactId>modelmapper</artifactId>
-            <version>3.1.1</version>
+            <version>${modelmapper.version}</version>
+            <!-- Mapeo entre objetos Java -->
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <optional>true</optional>
+            <!-- Reduce el código repetitivo (getters, setters, etc.) -->
         </dependency>
         <dependency>
             <groupId>commons-codec</groupId>
             <artifactId>commons-codec</artifactId>
+            <!-- Utilidades de codificación/decodificación -->
+        </dependency>
+        <dependency>
+            <groupId>javax.annotation</groupId>
+            <artifactId>javax.annotation-api</artifactId>
+            <version>${javax.annotation.version}</version>
+            <!-- Anotaciones estándar de Java -->
         </dependency>
 
-        <!-- DEVELOPMENT TOOLS -->
+        <!-- HERRAMIENTAS DE DESARROLLO - Utilidades para desarrollo -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-devtools</artifactId>
             <scope>runtime</scope>
             <optional>true</optional>
+            <!-- Herramientas para desarrollo (hot reload, etc.) -->
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-configuration-processor</artifactId>
             <optional>true</optional>
+            <!-- Procesador de configuración de Spring Boot -->
         </dependency>
 
-        <!-- TESTING -->
+        <!-- TESTING - Dependencias para pruebas -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
+            <!-- Framework de pruebas para Spring Boot -->
         </dependency>
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-test</artifactId>
             <scope>test</scope>
-        </dependency>
-
-        <!-- Asegúrate de tener estas dependencias -->
-        <dependency>
-            <groupId>org.hibernate.orm</groupId>
-            <artifactId>hibernate-core</artifactId>
-            <version>6.4.1.Final</version>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-mail</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>javax.annotation</groupId>
-            <artifactId>javax.annotation-api</artifactId>
-            <version>1.3.2</version> <!-- O la versión más reciente -->
+            <!-- Utilidades para pruebas de seguridad -->
         </dependency>
     </dependencies>
 
@@ -135,6 +176,14 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                        </exclude>
+                    </excludes>
+                </configuration>
             </plugin>
         </plugins>
     </build>

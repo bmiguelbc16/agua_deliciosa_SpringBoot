@@ -51,6 +51,8 @@ public class BaseUserDTO implements InitializingBean {
     @NotNull(message = "Debe seleccionar un rol")
     private Long roleId;
     
+    private String roleName;
+    
     private String userableType;
     private Long userableId;
     

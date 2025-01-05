@@ -1,120 +1,95 @@
 package com.bances.agua_deliciosa.service.core;
 
-import java.util.List;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.bances.agua_deliciosa.dto.DashboardDTO;
-import com.bances.agua_deliciosa.dto.DashboardDTO.*;
-import com.bances.agua_deliciosa.dto.DashboardStats;
+import com.bances.agua_deliciosa.dto.admin.DashboardDTO;
+import com.bances.agua_deliciosa.dto.admin.summary.OrderSummaryDTO;
+import com.bances.agua_deliciosa.dto.admin.summary.ProductSummaryDTO;
+import com.bances.agua_deliciosa.dto.admin.summary.ClientSummaryDTO;
+import com.bances.agua_deliciosa.model.Order;
 import com.bances.agua_deliciosa.model.OrderStatus;
-import com.bances.agua_deliciosa.repository.ClientRepository;
 import com.bances.agua_deliciosa.repository.OrderRepository;
-import com.bances.agua_deliciosa.repository.ProductRepository;
+import com.bances.agua_deliciosa.repository.ClientRepository;
 import com.bances.agua_deliciosa.repository.EmployeeRepository;
+import com.bances.agua_deliciosa.repository.ProductRepository;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.util.List;
 
 @Service
-@Transactional(readOnly = true)
 @RequiredArgsConstructor
-@Slf4j
 public class DashboardService {
     
-    private final ClientRepository clientRepository;
     private final OrderRepository orderRepository;
-    private final ProductRepository productRepository;
+    private final ClientRepository clientRepository;
     private final EmployeeRepository employeeRepository;
-    
-    public DashboardStats getStats() {
-        try {
-            log.info("Fetching dashboard statistics");
-            
-            DashboardStats stats = new DashboardStats();
-            stats.setTotalCustomers(clientRepository.count());
-            stats.setTotalOrders(orderRepository.count());
-            stats.setTotalProducts(productRepository.count());
-            stats.setTotalEmployees(employeeRepository.count());
-            
-            log.info("Successfully fetched dashboard statistics");
-            return stats;
-        } catch (Exception e) {
-            log.error("Error fetching dashboard statistics", e);
-            throw new RuntimeException("Error fetching dashboard statistics", e);
-        }
+    private final ProductRepository productRepository;
+
+    @Transactional(readOnly = true)
+    public DashboardDTO getDashboardData() {
+        long totalClients = clientRepository.count();
+        long totalEmployees = employeeRepository.count();
+        long totalOrders = orderRepository.count();
+        long totalProducts = productRepository.count();
+        long pendingOrders = orderRepository.countByStatus(OrderStatus.PENDING);
+        long inDeliveryOrders = orderRepository.countByStatus(OrderStatus.IN_DELIVERY);
+        
+        List<Order> recentOrders = orderRepository.findTop5ByOrderByCreatedAtDesc();
+        
+        return DashboardDTO.builder()
+            .totalClients(totalClients)
+            .totalEmployees(totalEmployees)
+            .totalOrders(totalOrders)
+            .totalProducts(totalProducts)
+            .pendingOrders(pendingOrders)
+            .inDeliveryOrders(inDeliveryOrders)
+            .recentOrders(recentOrders.stream()
+                .map(this::toOrderSummaryDTO)
+                .toList())
+            .topProducts(orderRepository.findTop5Products().stream()
+                .map(this::toProductSummaryDTO)
+                .toList())
+            .topCustomers(orderRepository.findTop5Customers().stream()
+                .map(this::toClientSummaryDTO)
+                .toList())
+            .build();
     }
 
-    public DashboardDTO getDashboardData() {
-        try {
-            log.info("Fetching dashboard data");
-            
-            DashboardDTO dashboard = new DashboardDTO();
-            
-            // Obtener estadísticas básicas
-            dashboard.setStats(getStats());
-            
-            // Obtener pedidos recientes
-            dashboard.setRecentOrders(orderRepository.findTop5ByOrderByCreatedAtDesc()
-                .stream()
-                .map(order -> {
-                    OrderDTO dto = new OrderDTO();
-                    dto.setCustomerName(order.getClient().getUser().getName() + " " + 
-                                      order.getClient().getUser().getLastName());
-                    dto.setTotal(order.getTotal().doubleValue());
-                    String status = order.getStatus();
-                    dto.setStatus(status);
-                    dto.setStatusClass(getStatusClassFromString(status));
-                    return dto;
-                })
-                .toList());
-            
-            // Obtener productos más vendidos
-            List<Object[]> topProductsData = orderRepository.findTop5Products();
-            dashboard.setTopProducts(topProductsData.stream()
-                .map(data -> {
-                    ProductDTO dto = new ProductDTO();
-                    dto.setName((String) data[1]);
-                    dto.setPrice(((Number) data[2]).doubleValue());
-                    dto.setSoldCount(((Number) data[3]).intValue());
-                    return dto;
-                })
-                .toList());
-            
-            // Obtener mejores clientes
-            List<Object[]> topCustomersData = orderRepository.findTop5Customers();
-            dashboard.setTopCustomers(topCustomersData.stream()
-                .map(data -> {
-                    CustomerDTO dto = new CustomerDTO();
-                    dto.setName((String) data[1]);
-                    dto.setOrderCount(((Number) data[2]).intValue());
-                    dto.setTotalSpent(((Number) data[3]).doubleValue());
-                    return dto;
-                })
-                .toList());
-            
-            log.info("Successfully fetched dashboard data");
-            return dashboard;
-        } catch (Exception e) {
-            log.error("Error fetching dashboard data", e);
-            throw new RuntimeException("Error fetching dashboard data", e);
-        }
+    private OrderSummaryDTO toOrderSummaryDTO(Order order) {
+        return OrderSummaryDTO.builder()
+            .id(order.getId())
+            .orderNumber(order.getOrderNumber())
+            .clientName(order.getClient().getUser().getName() + " " + 
+                      order.getClient().getUser().getLastName())
+            .totalAmount(order.getTotal())
+            .status(order.getStatus())
+            .statusClass(getStatusClass(order.getStatus()))
+            .createdAt(order.getCreatedAt())
+            .build();
     }
-    
-    private String getStatusClassFromString(String status) {
-        try {
-            return getStatusClass(OrderStatus.valueOf(status));
-        } catch (IllegalArgumentException e) {
-            log.warn("Invalid order status: {}", status);
-            return "bg-secondary";
-        }
+
+    private ProductSummaryDTO toProductSummaryDTO(Object[] data) {
+        return ProductSummaryDTO.builder()
+            .name((String) data[1])
+            .price(((Number) data[2]).doubleValue())
+            .soldCount(((Number) data[3]).intValue())
+            .build();
+    }
+
+    private ClientSummaryDTO toClientSummaryDTO(Object[] data) {
+        return ClientSummaryDTO.builder()
+            .name((String) data[1])
+            .orderCount(((Number) data[2]).intValue())
+            .totalSpent(((Number) data[3]).doubleValue())
+            .build();
     }
     
     private String getStatusClass(OrderStatus status) {
         return switch (status) {
             case PENDING -> "bg-warning";
-            case CONFIRMED -> "bg-info";
-            case IN_PROCESS -> "bg-primary";
+            case IN_PROCESS -> "bg-info";
+            case IN_DELIVERY -> "bg-primary";
             case DELIVERED -> "bg-success";
             case CANCELLED -> "bg-danger";
             default -> "bg-secondary";
