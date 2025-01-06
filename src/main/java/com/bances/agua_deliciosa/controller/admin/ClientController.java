@@ -1,7 +1,10 @@
 package com.bances.agua_deliciosa.controller.admin;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -9,6 +12,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.bances.agua_deliciosa.dto.admin.ClientDTO;
+import com.bances.agua_deliciosa.model.Client;
+import com.bances.agua_deliciosa.model.Employee;
 import com.bances.agua_deliciosa.service.core.ClientService;
 import com.bances.agua_deliciosa.service.core.RoleService;
 import com.bances.agua_deliciosa.service.auth.SecurityService;
@@ -18,27 +23,33 @@ import jakarta.validation.Valid;
 @RequestMapping("/admin/clients")
 public class ClientController extends AdminController {
 
-    @Autowired
-    private ClientService clientService;
+    private final ClientService clientService;
 
-    @Autowired
-    private RoleService roleService;
-
-    @Autowired
-    public ClientController(SecurityService securityService) {
+    
+    public ClientController(SecurityService securityService, ClientService clientService) {
         super(securityService);
+        this.clientService = clientService;
     }
 
-    @GetMapping("")
+    @GetMapping
     public String index(
-            @RequestParam(required = false) String search,
-            Pageable pageable,
-            Model model
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "10") int size,
+        Model model
     ) {
+
         setupCommonAttributes(model, "clients");
-        model.addAttribute("title", "Gestión de Clientes");
-        model.addAttribute("clients", clientService.getClientsPage(search, pageable));
-        return view("clients/index");
+
+        Pageable paging = PageRequest.of(page, size, Sort.by("id").descending());
+        Page<Client> clientPage = clientService.getClientsPage(paging);
+
+        model.addAttribute("clients", clientPage);
+        model.addAttribute("currentPage", clientPage.getNumber());
+        model.addAttribute("totalItems", clientPage.getTotalElements());
+        model.addAttribute("totalPages", clientPage.getTotalPages());
+
+        return "admin/clients/index";
+
     }
 
     @GetMapping("/create")
@@ -46,7 +57,7 @@ public class ClientController extends AdminController {
         setupCommonAttributes(model, "clients");
         model.addAttribute("title", "Crear Cliente");
         model.addAttribute("client", new ClientDTO());
-        model.addAttribute("roles", roleService.getAllRoles());
+        // model.addAttribute("roles", roleService.getAllRoles());
         return view("clients/create");
     }
 
@@ -60,7 +71,7 @@ public class ClientController extends AdminController {
         if (result.hasErrors()) {
             setupCommonAttributes(model, "clients");
             model.addAttribute("title", "Crear Cliente");
-            model.addAttribute("roles", roleService.getAllRoles());
+            // model.addAttribute("roles", roleService.getAllRoles());
             return view("clients/create");
         }
 
@@ -79,7 +90,7 @@ public class ClientController extends AdminController {
         setupCommonAttributes(model, "clients");
         model.addAttribute("title", "Editar Cliente");
         model.addAttribute("client", clientService.findByUserId(id));
-        model.addAttribute("roles", roleService.getAllRoles());
+        // model.addAttribute("roles", roleService.getAllRoles());
         return view("clients/edit");
     }
 
@@ -94,7 +105,7 @@ public class ClientController extends AdminController {
         if (result.hasErrors()) {
             setupCommonAttributes(model, "clients");
             model.addAttribute("title", "Editar Cliente");
-            model.addAttribute("roles", roleService.getAllRoles());
+            // model.addAttribute("roles", roleService.getAllRoles());
             return view("clients/edit");
         }
 

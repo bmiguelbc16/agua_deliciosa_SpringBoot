@@ -17,7 +17,7 @@ public class Employee {
     private Long id;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id", referencedColumnName = "userable_id")
+    @JoinColumn(name = "id", referencedColumnName = "userable_id", insertable = false, updatable = false)
     private User user;
 
     @OneToMany(mappedBy = "employee")

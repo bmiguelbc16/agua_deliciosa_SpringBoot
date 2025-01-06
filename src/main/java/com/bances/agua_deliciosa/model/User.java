@@ -52,16 +52,11 @@ public class User {
     @JoinColumn(name = "role_id")
     private Role role;
 
-    @OneToOne(mappedBy = "user")
-    private Client client;
-
-    @Column(name = "userable_type", nullable = false, length = 50)
-    @Builder.Default
-    private String userableType = "";
+    @Column(name = "userable_type", nullable = false)
+    private String userableType; // "Client" o "Employee"
 
     @Column(name = "userable_id", nullable = false)
-    @Builder.Default
-    private Long userableId = 0L;
+    private Long userableId; // ID relacionado (Client o Employee)
 
     @Column(name = "email_verified_at")
     private LocalDateTime emailVerifiedAt;

@@ -1,6 +1,10 @@
 package com.bances.agua_deliciosa.service.core;
 
 import lombok.RequiredArgsConstructor;
+
+import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -10,6 +14,8 @@ import com.bances.agua_deliciosa.dto.admin.ProfileDTO;
 import com.bances.agua_deliciosa.model.Gender;
 import com.bances.agua_deliciosa.model.Role;
 import com.bances.agua_deliciosa.model.User;
+import com.bances.agua_deliciosa.repository.ClientRepository;
+import com.bances.agua_deliciosa.repository.EmployeeRepository;
 import com.bances.agua_deliciosa.repository.RoleRepository;
 import com.bances.agua_deliciosa.repository.UserRepository;
 
@@ -22,6 +28,12 @@ public class UserService {
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
+
+    @Autowired
+    private ClientRepository clientRepository;
+
+    @Autowired
+    private EmployeeRepository employeeRepository;
 
     public User findByEmail(String email) {
         return userRepository.findByEmail(email)
@@ -103,5 +115,14 @@ public class UserService {
         }
         dto.setBirthDate(user.getBirthDate());
         return dto;
+    }
+
+    public Object getUserable(User user) {
+        if ("Client".equals(user.getUserableType())) {
+            return clientRepository.findById(user.getUserableId());
+        } else if ("Employee".equals(user.getUserableType())) {
+            return employeeRepository.findById(user.getUserableId());
+        }
+        return Optional.empty();
     }
 }

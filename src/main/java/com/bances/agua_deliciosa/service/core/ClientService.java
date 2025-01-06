@@ -22,8 +22,8 @@ public class ClientService {
     private UserRepository userRepository;
 
     @Transactional(readOnly = true)
-    public Page<Client> getClientsPage(String search, Pageable pageable) {
-        return clientRepository.findClientsWithSearch(search, pageable);
+    public Page<Client> getClientsPage(Pageable pageable) {
+        return clientRepository.findClientsWithSearch(null, pageable);
     }
 
     @Transactional

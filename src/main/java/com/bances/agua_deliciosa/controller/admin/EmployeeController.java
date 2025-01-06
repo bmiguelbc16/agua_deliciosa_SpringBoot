@@ -28,7 +28,7 @@ import jakarta.validation.Valid;
 
 @Controller
 @RequestMapping("/admin/employees")
-@PreAuthorize("hasRole('Admin')")
+
 public class EmployeeController extends AdminController {
 
     private final EmployeeService employeeService;

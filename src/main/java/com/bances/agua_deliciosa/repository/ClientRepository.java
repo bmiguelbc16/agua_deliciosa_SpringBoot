@@ -13,8 +13,8 @@ import org.springframework.data.domain.Pageable;
 public interface ClientRepository extends JpaRepository<Client, Long> {
 
     @Query("""
-        SELECT DISTINCT c FROM Client c 
-        JOIN FETCH c.user u 
+        SELECT c FROM Client c
+        JOIN FETCH c.user u
         WHERE u.userableType = 'Client'
         AND (:search IS NULL 
             OR u.name LIKE %:search% 

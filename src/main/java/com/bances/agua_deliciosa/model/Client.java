@@ -20,7 +20,7 @@ public class Client {
     private Long id;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id", referencedColumnName = "userable_id")
+    @JoinColumn(name = "id", referencedColumnName = "userable_id", insertable = false, updatable = false)
     private User user;
 
     @OneToMany(mappedBy = "client", cascade = CascadeType.ALL, orphanRemoval = true)
