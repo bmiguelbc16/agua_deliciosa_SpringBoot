@@ -17,25 +17,21 @@ public class DatabaseSeeder implements CommandLineRunner {
     @Transactional
     public void run(String... args) {
         try {
-            // Ejecutar los seeders en orden según la anotación @Order
             System.out.println("Verificando si es necesario ejecutar seeders...");
-            seeders.forEach(seeder -> {
-                try {
-                    if (seeder.shouldSeed()) {
-                        System.out.println("Ejecutando " + seeder.getClass().getSimpleName() + "...");
-                        seeder.seed();
-                        System.out.println(seeder.getClass().getSimpleName() + " ejecutado exitosamente");
-                    } else {
-                        System.out.println("Saltando " + seeder.getClass().getSimpleName() + " - Ya existen datos");
-                    }
-                } catch (Exception e) {
-                    System.err.println("Error al ejecutar seeder " + seeder.getClass().getSimpleName() + ": " + e.getMessage());
-                    throw e;
+            
+            for (Seeder seeder : seeders) {
+                if (seeder.shouldSeed()) {
+                    System.out.println("Ejecutando seeder: " + seeder.getClass().getSimpleName());
+                    seeder.seedWithTransaction();
+                } else {
+                    System.out.println("Saltando seeder: " + seeder.getClass().getSimpleName() + " (no es necesario)");
                 }
-            });
-            System.out.println("Proceso de seeding completado");
+            }
+            
+            System.out.println("Seeders completados exitosamente.");
         } catch (Exception e) {
-            System.err.println("Error en DatabaseSeeder: " + e.getMessage());
+            System.err.println("Error al ejecutar los seeders: " + e.getMessage());
+            e.printStackTrace();
             throw e;
         }
     }

@@ -1,77 +1,98 @@
 package com.bances.agua_deliciosa.service.core;
 
-import com.bances.agua_deliciosa.model.Role;
-import com.bances.agua_deliciosa.repository.RoleRepository;
-import com.bances.agua_deliciosa.dto.admin.RoleDTO;
-import lombok.RequiredArgsConstructor;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.bances.agua_deliciosa.model.Permission;
+import com.bances.agua_deliciosa.model.Role;
+import com.bances.agua_deliciosa.repository.PermissionRepository;
+import com.bances.agua_deliciosa.repository.RoleRepository;
+import com.bances.agua_deliciosa.repository.UserRepository;
+
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Service
-@Transactional(readOnly = true)
-@RequiredArgsConstructor
 public class RoleService {
+
+    @Autowired
+    private RoleRepository roleRepository;
+
+    @Autowired
+    private PermissionRepository permissionRepository;
     
-    private final RoleRepository roleRepository;
-    
-    public List<Role> getAllRoles() {
-        return roleRepository.findAll();
+    @Autowired
+    private UserRepository userRepository;
+
+    @Transactional(readOnly = true)
+    public Role findById(Long id) {
+        return roleRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Role not found with id: " + id));
     }
 
-    public List<Role> listAll() {
-        return roleRepository.findAll();
-    }
-
+    @Transactional(readOnly = true)
     public Role findByName(String name) {
         return roleRepository.findByName(name)
-            .orElseThrow(() -> new RuntimeException("Rol no encontrado: " + name));
+                .orElseThrow(() -> new RuntimeException("Role not found with name: " + name));
     }
 
-    public Role getById(Long id) {
-        return roleRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Rol no encontrado con ID: " + id));
+    @Transactional(readOnly = true)
+    public List<Role> findAll() {
+        return roleRepository.findAll();
     }
 
     @Transactional
-    public Role create(RoleDTO dto) {
-        if (roleRepository.existsByName(dto.getName())) {
-            throw new RuntimeException("Ya existe un rol con ese nombre");
-        }
-
-        Role role = new Role();
-        role.setName(dto.getName());
+    public Role save(Role role) {
+        validateRoleName(role);
         role.setCreatedAt(LocalDateTime.now());
-        
         return roleRepository.save(role);
     }
 
     @Transactional
-    public Role update(Long id, RoleDTO dto) {
-        Role role = getById(id);
+    public Role update(Role role) {
+        Role existingRole = findById(role.getId());
         
-        if (!role.getName().equals(dto.getName()) && 
-            roleRepository.existsByName(dto.getName())) {
-            throw new RuntimeException("Ya existe un rol con ese nombre");
+        if (!existingRole.getName().equals(role.getName())) {
+            validateRoleName(role);
         }
-
-        role.setName(dto.getName());
         role.setUpdatedAt(LocalDateTime.now());
-        
         return roleRepository.save(role);
     }
 
     @Transactional
     public void delete(Long id) {
-        Role role = getById(id);
-        
-        // Verificar si hay usuarios usando este rol
-        if (role.getUsers() != null && !role.getUsers().isEmpty()) {
-            throw new RuntimeException("No se puede eliminar el rol porque está siendo usado por usuarios");
+        findById(id); // Verificar que existe
+        if (userRepository.countByRoleId(id) > 0) {
+            throw new RuntimeException("Cannot delete role with associated users");
         }
+        roleRepository.delete(id);
+    }
+
+    @Transactional
+    public void assignPermission(Long roleId, Long permissionId) {
+        Role role = findById(roleId);
+        Permission permission = permissionRepository.findById(permissionId)
+                .orElseThrow(() -> new RuntimeException("Permission not found"));
         
-        roleRepository.delete(role);
+        role.getPermissions().add(permission);
+        roleRepository.save(role);
+    }
+
+    @Transactional
+    public void removePermission(Long roleId, Long permissionId) {
+        Role role = findById(roleId);
+        role.getPermissions().removeIf(p -> p.getId().equals(permissionId));
+        roleRepository.save(role);
+    }
+
+    private void validateRoleName(Role role) {
+        roleRepository.findByName(role.getName())
+                .ifPresent(existingRole -> {
+                    if (!existingRole.getId().equals(role.getId())) {
+                        throw new RuntimeException("Role name already exists");
+                    }
+                });
     }
 }

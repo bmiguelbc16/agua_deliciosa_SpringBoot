@@ -1,57 +1,99 @@
 package com.bances.agua_deliciosa.model;
 
-import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
-import jakarta.persistence.*;
-import lombok.Data;
-
-@Data
-@Entity
-@Table(name = "roles", uniqueConstraints = {
-    @UniqueConstraint(name = "unique_role", columnNames = {"name", "guard_name"})
-})
-public class Role {
+public class Role extends BaseModel {
     
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @Column(nullable = false, length = 125)
     private String name;
-
-    @Column
     private String description;
-
-    @Column(name = "guard_name", nullable = false, length = 125)
     private String guardName = "web";
-
-    @ManyToMany
-    @JoinTable(
-        name = "role_has_permissions",
-        joinColumns = @JoinColumn(name = "role_id"),
-        inverseJoinColumns = @JoinColumn(name = "permission_id")
-    )
+    private boolean active;
     private Set<Permission> permissions = new HashSet<>();
-
-    @OneToMany(mappedBy = "role")
     private Set<User> users = new HashSet<>();
 
-    @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
-
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
+    // Getters y Setters
+    public String getName() {
+        return name;
     }
 
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+    
+    public String getGuardName() {
+        return guardName;
+    }
+
+    public void setGuardName(String guardName) {
+        this.guardName = guardName;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+    
+    public void setActive(boolean active) {
+        this.active = active;
+    }
+
+    public Set<Permission> getPermissions() {
+        return new HashSet<>(permissions);
+    }
+    
+    public void setPermissions(Set<Permission> permissions) {
+        this.permissions = permissions != null ? new HashSet<>(permissions) : new HashSet<>();
+    }
+
+    public Set<User> getUsers() {
+        return new HashSet<>(users);
+    }
+
+    public void setUsers(Set<User> users) {
+        this.users = users != null ? new HashSet<>(users) : new HashSet<>();
+    }
+
+    // Métodos de utilidad
+    public void addPermission(Permission permission) {
+        if (permission != null) {
+            permissions.add(permission);
+            permission.getRoles().add(this);
+        }
+    }
+
+    public void removePermission(Permission permission) {
+        if (permission != null) {
+            permissions.remove(permission);
+            permission.getRoles().remove(this);
+        }
+    }
+
+    public void addUser(User user) {
+        if (user != null) {
+            users.add(user);
+            user.setRole(this);
+        }
+    }
+
+    public void removeUser(User user) {
+        if (user != null) {
+            users.remove(user);
+            if (user.getRole() == this) {
+                user.setRole(null);
+            }
+        }
+    }
+
+    public boolean hasPermission(String permissionName) {
+        return permissions.stream()
+                .anyMatch(permission -> permission.getName().equals(permissionName) && permission.isActive());
     }
 }

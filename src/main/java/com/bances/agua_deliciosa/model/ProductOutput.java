@@ -1,51 +1,41 @@
 package com.bances.agua_deliciosa.model;
 
-import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
-import jakarta.persistence.*;
-import lombok.Data;
-
-@Data
-@Entity
-@Table(name = "product_outputs")
-public class ProductOutput {
-    
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @Column(name = "output_number", nullable = false, unique = true)
-    private String outputNumber;
-
-    @ManyToOne
-    @JoinColumn(name = "employee_id", nullable = false)
+public class ProductOutput extends BaseModel {
     private Employee employee;
+    private String description;
+    private List<ProductOutputDetail> details = new ArrayList<>();
 
-    @Column(nullable = false, length = 50)
-    private String reason;
-
-    @Column
-    private String observation;
-
-    @OneToMany(mappedBy = "productOutput", cascade = CascadeType.ALL)
-    private Set<ProductOutputDetail> details = new HashSet<>();
-
-    @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
-
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
+    public Employee getEmployee() {
+        return employee;
     }
 
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+    public void setEmployee(Employee employee) {
+        this.employee = employee;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public List<ProductOutputDetail> getDetails() {
+        return new ArrayList<>(details);
+    }
+
+    public void setDetails(List<ProductOutputDetail> details) {
+        this.details = details != null ? new ArrayList<>(details) : new ArrayList<>();
+    }
+
+    public void addDetail(ProductOutputDetail detail) {
+        if (detail != null) {
+            details.add(detail);
+            detail.setOutput(this);
+        }
     }
 }

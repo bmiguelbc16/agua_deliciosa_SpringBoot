@@ -2,11 +2,14 @@ package com.bances.agua_deliciosa.db.seeders;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.HashSet;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.core.annotation.Order;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -15,6 +18,7 @@ import com.bances.agua_deliciosa.model.Employee;
 import com.bances.agua_deliciosa.model.Gender;
 import com.bances.agua_deliciosa.model.Role;
 import com.bances.agua_deliciosa.model.User;
+import com.bances.agua_deliciosa.model.UserVerification;
 import com.bances.agua_deliciosa.repository.ClientRepository;
 import com.bances.agua_deliciosa.repository.EmployeeRepository;
 import com.bances.agua_deliciosa.repository.RoleRepository;
@@ -22,8 +26,8 @@ import com.bances.agua_deliciosa.repository.UserRepository;
 
 @Slf4j
 @Component
+@Order(3)  // Se ejecutará DESPUÉS de PermissionSeeder
 @RequiredArgsConstructor
-@Order(2) // Se ejecuta después de RoleSeeder que tiene @Order(1)
 public class UserSeeder implements Seeder {
 
     private final UserRepository userRepository;
@@ -40,94 +44,133 @@ public class UserSeeder implements Seeder {
     @Override
     @Transactional
     public void seed() {
-        try {
-            log.info("Iniciando seed de usuarios...");
-            log.info("Buscando roles necesarios...");
+        // Obtener roles
+        Role adminRole = roleRepository.findByName("Admin")
+            .orElseThrow(() -> new RuntimeException("Rol Admin no encontrado"));
+        
+        Role employeeRole = roleRepository.findByName("Employee")
+            .orElseThrow(() -> new RuntimeException("Rol Employee no encontrado"));
+        
+        Role clientRole = roleRepository.findByName("Client")
+            .orElseThrow(() -> new RuntimeException("Rol Client no encontrado"));
 
-            Role adminRole = roleRepository.findByName("Admin")
-                .orElseThrow(() -> new RuntimeException("Rol Admin no encontrado"));
-            log.info("Rol Admin encontrado: {}", adminRole.getId());
-
-            Role clientRole = roleRepository.findByName("Cliente")
-                .orElseThrow(() -> new RuntimeException("Rol Cliente no encontrado"));
-            log.info("Rol Cliente encontrado: {}", clientRole.getId());
-
-            createAdminUser(adminRole);
-            createClientUser(clientRole);
-
-            log.info("Seed de usuarios completado exitosamente");
-        } catch (Exception e) {
-            log.error("Error en UserSeeder: {}", e.getMessage(), e);
-            throw e;
-        }
+        // Crear usuarios base
+        createAdminUser(adminRole);
+        createEmployeeUser(employeeRole);
+        createClientUser(clientRole);
     }
 
     private void createAdminUser(Role adminRole) {
-        try {
-            log.info("Creando usuario administrador...");
-            
-            Employee employee = new Employee();
-            LocalDateTime now = LocalDateTime.now();
-            employee.setCreatedAt(now);
-            employee.setUpdatedAt(now);
-            employee = employeeRepository.save(employee);
-            
-            User adminUser = new User();
-            adminUser.setName("Admin");
-            adminUser.setLastName("System");
-            adminUser.setEmail("admin@sistema.com");
-            adminUser.setDocumentNumber("12345678");
-            adminUser.setPassword(passwordEncoder.encode("password"));
-            adminUser.setBirthDate(LocalDate.of(1990, 1, 1));
-            adminUser.setGender(Gender.MALE);
-            adminUser.setPhoneNumber("123456789");
-            adminUser.setRole(adminRole);
-            adminUser.setActive(true);
-            adminUser.setUserableId(employee.getId());
-            adminUser.setUserableType("Employee");
-            adminUser.setCreatedAt(now);
-            adminUser.setUpdatedAt(now);
-            adminUser = userRepository.save(adminUser);
-            log.info("Usuario administrador creado con ID: {}", adminUser.getId());
-        } catch (Exception e) {
-            log.error("Error creando usuario administrador: {}", e.getMessage(), e);
-            throw e;
-        }
+        Employee employee = new Employee();
+        employee.setFirstName("Admin");
+        employee.setLastName("System");
+        employee.setGender(Gender.MALE);
+        employee.setBirthDate(LocalDate.of(1990, 1, 1));
+        employee.setPhone("999999999");
+        employee.setAddress("Dirección Administrativa");
+        employee.setCreatedAt(LocalDateTime.now());
+        employee.setUpdatedAt(LocalDateTime.now());
+        employee.setActive(true);
+        employee = employeeRepository.save(employee);
+
+        User adminUser = new User();
+        adminUser.setEmail("admin@aguadeliciosa.com");
+        adminUser.setPassword(passwordEncoder.encode("admin123"));
+        adminUser.setUserableType("Employee");
+        adminUser.setUserableId(employee.getId());
+        adminUser.setRoles(new HashSet<>(Collections.singletonList(adminRole)));
+        adminUser.setCreatedAt(LocalDateTime.now());
+        adminUser.setUpdatedAt(LocalDateTime.now());
+        adminUser.setActive(true);
+
+        // Crear verificación
+        UserVerification verification = new UserVerification();
+        verification.setToken("admin-verified");
+        verification.setVerifiedAt(LocalDateTime.now());
+        verification.setExpiresAt(LocalDateTime.now().plusYears(1));
+        verification.setActive(true);
+        verification.setCreatedAt(LocalDateTime.now());
+        verification.setUpdatedAt(LocalDateTime.now());
+        
+        adminUser.setVerifications(new HashSet<>(Collections.singletonList(verification)));
+        verification.setUser(adminUser);
+        
+        userRepository.save(adminUser);
+    }
+
+    private void createEmployeeUser(Role employeeRole) {
+        Employee employee = new Employee();
+        employee.setFirstName("Empleado");
+        employee.setLastName("Demo");
+        employee.setGender(Gender.MALE);
+        employee.setBirthDate(LocalDate.of(1995, 1, 1));
+        employee.setPhone("988888888");
+        employee.setAddress("Dirección Empleado");
+        employee.setCreatedAt(LocalDateTime.now());
+        employee.setUpdatedAt(LocalDateTime.now());
+        employee.setActive(true);
+        employee = employeeRepository.save(employee);
+
+        User employeeUser = new User();
+        employeeUser.setEmail("empleado@aguadeliciosa.com");
+        employeeUser.setPassword(passwordEncoder.encode("empleado123"));
+        employeeUser.setUserableType("Employee");
+        employeeUser.setUserableId(employee.getId());
+        employeeUser.setRoles(new HashSet<>(Collections.singletonList(employeeRole)));
+        employeeUser.setCreatedAt(LocalDateTime.now());
+        employeeUser.setUpdatedAt(LocalDateTime.now());
+        employeeUser.setActive(true);
+
+        // Crear verificación
+        UserVerification verification = new UserVerification();
+        verification.setToken("employee-verified");
+        verification.setVerifiedAt(LocalDateTime.now());
+        verification.setExpiresAt(LocalDateTime.now().plusYears(1));
+        verification.setActive(true);
+        verification.setCreatedAt(LocalDateTime.now());
+        verification.setUpdatedAt(LocalDateTime.now());
+        
+        employeeUser.setVerifications(new HashSet<>(Collections.singletonList(verification)));
+        verification.setUser(employeeUser);
+        
+        userRepository.save(employeeUser);
     }
 
     private void createClientUser(Role clientRole) {
-        try {
-            log.info("Creando usuario cliente...");
-            
-            // Primero creamos el Client base
-            Client client = new Client();
-            LocalDateTime now = LocalDateTime.now();
-            client.setCreatedAt(now);
-            client.setUpdatedAt(now);
-            client = clientRepository.save(client);
-            
-            // Luego creamos el User con la relación polimórfica
-            User clientUser = new User();
-            clientUser.setName("Client");
-            clientUser.setLastName("User");
-            clientUser.setEmail("client@example.com");
-            clientUser.setDocumentNumber("87654321");
-            clientUser.setPassword(passwordEncoder.encode("password"));
-            clientUser.setBirthDate(LocalDate.of(1995, 1, 1));
-            clientUser.setGender(Gender.FEMALE);
-            clientUser.setPhoneNumber("987654321");
-            clientUser.setRole(clientRole);
-            clientUser.setActive(true);
-            clientUser.setUserableId(client.getId());
-            clientUser.setUserableType("Client");
-            clientUser.setCreatedAt(now);
-            clientUser.setUpdatedAt(now);
-            clientUser = userRepository.save(clientUser);
-            
-            log.info("Usuario cliente creado con ID: {}", clientUser.getId());
-        } catch (Exception e) {
-            log.error("Error creando usuario cliente: {}", e.getMessage(), e);
-            throw e;
-        }
+        Client client = new Client();
+        client.setFirstName("Cliente");
+        client.setLastName("Demo");
+        client.setGender(Gender.MALE);
+        client.setBirthDate(LocalDate.of(2000, 1, 1));
+        client.setPhone("977777777");
+        client.setAddress("Dirección Cliente");
+        client.setCreatedAt(LocalDateTime.now());
+        client.setUpdatedAt(LocalDateTime.now());
+        client.setActive(true);
+        client = clientRepository.save(client);
+
+        User clientUser = new User();
+        clientUser.setEmail("cliente@demo.com");
+        clientUser.setPassword(passwordEncoder.encode("cliente123"));
+        clientUser.setUserableType("Client");
+        clientUser.setUserableId(client.getId());
+        clientUser.setRoles(new HashSet<>(Collections.singletonList(clientRole)));
+        clientUser.setCreatedAt(LocalDateTime.now());
+        clientUser.setUpdatedAt(LocalDateTime.now());
+        clientUser.setActive(true);
+
+        // Crear verificación
+        UserVerification verification = new UserVerification();
+        verification.setToken("client-verified");
+        verification.setVerifiedAt(LocalDateTime.now());
+        verification.setExpiresAt(LocalDateTime.now().plusYears(1));
+        verification.setActive(true);
+        verification.setCreatedAt(LocalDateTime.now());
+        verification.setUpdatedAt(LocalDateTime.now());
+        
+        clientUser.setVerifications(new HashSet<>(Collections.singletonList(verification)));
+        verification.setUser(clientUser);
+        
+        userRepository.save(clientUser);
     }
 }

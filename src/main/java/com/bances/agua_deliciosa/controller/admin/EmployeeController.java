@@ -3,10 +3,6 @@ package com.bances.agua_deliciosa.controller.admin;
 import java.util.HashMap;
 import java.util.Map;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -28,7 +24,6 @@ import jakarta.validation.Valid;
 
 @Controller
 @RequestMapping("/admin/employees")
-
 public class EmployeeController extends AdminController {
 
     private final EmployeeService employeeService;
@@ -40,38 +35,25 @@ public class EmployeeController extends AdminController {
 
     @GetMapping
     public String index(
-            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
             Model model) {
-        
-        setupCommonAttributes(model, "employees");
-        
-        Pageable paging = PageRequest.of(page, size, Sort.by("id").descending());
-        Page<Employee> employeePage = employeeService.getEmployeesPage(paging);
-
+        Page<Employee> employeePage = employeeService.getEmployees(page, size, null);
         model.addAttribute("employees", employeePage);
-        model.addAttribute("currentPage", employeePage.getNumber());
-        model.addAttribute("totalItems", employeePage.getTotalElements());
-        model.addAttribute("totalPages", employeePage.getTotalPages());
-
         return "admin/employees/index";
     }
 
     @GetMapping("/api")
     @ResponseBody
     public Map<String, Object> getEmployees(
-            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
-        
-        Pageable paging = PageRequest.of(page, size, Sort.by("id").descending());
-        Page<Employee> employeePage = employeeService.getEmployeesPage(paging);
-
+        Page<Employee> employeePage = employeeService.getEmployees(page, size, null);
         Map<String, Object> response = new HashMap<>();
         response.put("employees", employeePage.getContent());
         response.put("currentPage", employeePage.getNumber());
         response.put("totalItems", employeePage.getTotalElements());
         response.put("totalPages", employeePage.getTotalPages());
-
         return response;
     }
 

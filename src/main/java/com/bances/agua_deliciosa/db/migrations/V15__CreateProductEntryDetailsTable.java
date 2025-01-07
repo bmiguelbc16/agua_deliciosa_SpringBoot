@@ -6,23 +6,28 @@ import org.flywaydb.core.api.MigrationVersion;
 import org.springframework.stereotype.Component;
 
 /**
- * Migración para crear la tabla de detalles de entradas de productos.
+ * Migración para crear la tabla de detalles de entrada de productos.
  * 
- * La tabla product_entry_details almacena:
- * - Campos principales: product_entry_id, product_id, quantity
- * - Campos de precio: unit_price, subtotal
- * - Timestamps automáticos
+ * ESTRUCTURA:
+ * ----------
+ * Detalles de cada entrada de productos:
+ * - product_entry_id: ID de la entrada principal
+ * - product_id: Producto que ingresa
+ * - quantity: Cantidad
+ * - unit_price: Precio unitario de entrada
  * 
- * Características:
- * - Índices en product_entry_id y product_id
- * - Claves foráneas a product_entries y products
- * - Precios con precisión decimal(10,2)
- * - Cantidad obligatoria
+ * EJEMPLOS:
+ * --------
+ * Para una entrada de bidones:
+ * 1. Cabecera (product_entries):
+ *    - employee_id: 1
+ *    - description: "Ingreso de bidones vacíos por devolución"
  * 
- * Se relaciona con:
- * - product_entries: entrada a la que pertenece
- * - products: producto ingresado
- * Uso: Desglose de productos por entrada
+ * 2. Detalle (product_entry_details):
+ *    - product_entry_id: ID de la entrada
+ *    - product_id: ID del bidón
+ *    - quantity: 5
+ *    - unit_price: 10.00
  */
 @Component
 public class V15__CreateProductEntryDetailsTable implements JavaMigration {
@@ -36,14 +41,16 @@ public class V15__CreateProductEntryDetailsTable implements JavaMigration {
                     product_id BIGINT NOT NULL,
                     quantity INT NOT NULL,
                     unit_price DECIMAL(10,2) NOT NULL,
-                    subtotal DECIMAL(10,2) NOT NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                     PRIMARY KEY (id),
-                    INDEX idx_product_entry_id (product_entry_id),
-                    INDEX idx_product_id (product_id),
-                    CONSTRAINT fk_product_entry_details_entry_id FOREIGN KEY (product_entry_id) REFERENCES product_entries(id),
-                    CONSTRAINT fk_product_entry_details_product_id FOREIGN KEY (product_id) REFERENCES products(id)
+                    INDEX idx_product_entry (product_entry_id),
+                    INDEX idx_product (product_id),
+                    CONSTRAINT fk_entry_details_entry
+                        FOREIGN KEY (product_entry_id) REFERENCES product_entries(id),
+                    CONSTRAINT fk_entry_details_product
+                        FOREIGN KEY (product_id) REFERENCES products(id),
+                    CONSTRAINT chk_quantity CHECK (quantity > 0)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
             """);
         }

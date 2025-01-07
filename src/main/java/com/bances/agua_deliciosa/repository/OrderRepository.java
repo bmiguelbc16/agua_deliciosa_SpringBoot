@@ -1,86 +1,60 @@
 package com.bances.agua_deliciosa.repository;
 
+import java.math.BigDecimal;
+import java.sql.ResultSet;
 import java.util.List;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
+import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 
 import com.bances.agua_deliciosa.model.Order;
 import com.bances.agua_deliciosa.model.OrderStatus;
 
 @Repository
-public interface OrderRepository extends JpaRepository<Order, Long> {
-    
-    /**
-     * Encuentra los últimos 5 pedidos ordenados por fecha de creación descendente
-     */
-    @Query(value = "SELECT o.* FROM orders o ORDER BY o.created_at DESC LIMIT 5", nativeQuery = true)
-    List<Order> findTop5ByOrderByCreatedAtDesc();
-    
-    /**
-     * Encuentra los pedidos de un cliente específico
-     */
-    List<Order> findByClientId(Long clientId);
-    
-    /**
-     * Cuenta el número de pedidos por estado
-     */
-    @Query("SELECT o.status, COUNT(o) FROM Order o GROUP BY o.status")
-    List<Object[]> countByStatus();
-    
-    /**
-     * Cuenta el número de pedidos por estado
-     */
-    long countByStatus(OrderStatus status);
-    
-    /**
-     * Encuentra los pedidos entre dos fechas
-     */
-    @Query("SELECT o FROM Order o WHERE o.createdAt BETWEEN :startDate AND :endDate")
-    List<Order> findOrdersBetweenDates(String startDate, String endDate);
-    
-    /**
-     * Calcula el total de ventas por mes
-     */
-    @Query(value = """
-        SELECT 
-            YEAR(created_at) as year,
-            MONTH(created_at) as month,
-            SUM(total_amount) as total
-        FROM orders 
-        WHERE created_at >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
-        GROUP BY YEAR(created_at), MONTH(created_at)
-        ORDER BY year DESC, month DESC
-        LIMIT 12
-    """, nativeQuery = true)
-    List<Object[]> getMonthlyRevenue();
-    
-    /**
-     * Encuentra los productos más vendidos
-     */
-    @Query(value = """
-        SELECT p.id, p.name, p.price, COUNT(*) as quantity 
-        FROM orders o 
-        JOIN order_details od ON o.id = od.order_id 
-        JOIN products p ON od.product_id = p.id 
-        GROUP BY p.id, p.name, p.price 
-        ORDER BY quantity DESC 
-        LIMIT 5
-        """, nativeQuery = true)
-    List<Object[]> findTop5Products();
-    
-    /**
-     * Encuentra los mejores clientes
-     */
-    @Query(value = """
-        SELECT c.id, CONCAT(u.name, ' ', u.last_name) as full_name, 
-        COUNT(o.id) as total_orders, SUM(o.total_amount) as total_spent 
-        FROM orders o 
-        JOIN clients c ON o.client_id = c.id 
-        JOIN users u ON u.userable_id = c.id AND u.userable_type = 'Client'
-        GROUP BY c.id, u.name, u.last_name 
-        ORDER BY total_spent DESC 
-        LIMIT 5
-        """, nativeQuery = true)
-    List<Object[]> findTop5Customers();
+public class OrderRepository {
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    private final RowMapper<Order> orderMapper = (ResultSet rs, int rowNum) -> {
+        Order order = new Order();
+        order.setId(rs.getLong("id"));
+        order.setCode(rs.getString("code"));
+        order.setStatus(OrderStatus.valueOf(rs.getString("status")));
+        order.setTotal(rs.getBigDecimal("total"));
+        order.setActive(rs.getBoolean("active"));
+        return order;
+    };
+
+    public Optional<Order> findById(Long id) {
+        String sql = "SELECT * FROM orders WHERE id = ? AND active = true";
+        List<Order> orders = jdbcTemplate.query(sql, orderMapper, id);
+        return orders.isEmpty() ? Optional.empty() : Optional.of(orders.get(0));
+    }
+
+    public List<Order> findAll() {
+        String sql = "SELECT * FROM orders WHERE active = true";
+        return jdbcTemplate.query(sql, orderMapper);
+    }
+
+    public long count() {
+        String sql = "SELECT COUNT(*) FROM orders WHERE active = true";
+        Long count = jdbcTemplate.queryForObject(sql, Long.class);
+        return count != null ? count : 0L;
+    }
+
+    public long countByStatus(OrderStatus status) {
+        String sql = "SELECT COUNT(*) FROM orders WHERE status = ? AND active = true";
+        Long count = jdbcTemplate.queryForObject(sql, Long.class, status.name());
+        return count != null ? count : 0L;
+    }
+
+    public BigDecimal calculateTotalSales() {
+        String sql = "SELECT COALESCE(SUM(total), 0) FROM orders WHERE status = ? AND active = true";
+        BigDecimal total = jdbcTemplate.queryForObject(sql, BigDecimal.class, OrderStatus.COMPLETED.name());
+        return total != null ? total : BigDecimal.ZERO;
+    }
 }

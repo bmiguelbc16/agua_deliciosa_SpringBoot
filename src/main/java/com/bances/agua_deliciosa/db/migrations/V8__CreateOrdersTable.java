@@ -6,50 +6,77 @@ import org.flywaydb.core.api.MigrationVersion;
 import org.springframework.stereotype.Component;
 
 /**
- * Migración para crear la tabla de pedidos.
+ * Migración para crear las tablas relacionadas con pedidos.
  * 
- * La tabla orders almacena:
- * - Campos principales: employee_id (empleado que atiende), client_id (cliente que ordena), total
- * - Estados: status, payment_status
- * - Campos opcionales: payment_type, notes
- * - Timestamps automáticos
+ * ESTRUCTURA POLIMÓRFICA:
+ * ---------------------
+ * 1. PEDIDOS (orders):
+ *    - Tabla base con campos comunes
+ *    - Usa polimorfismo para store_orders y web_orders
  * 
- * Características:
- * - Índices en employee_id y client_id
- * - Claves foráneas a employees y clients
- * - Estados predeterminados 'pending'
- * - Total con precisión decimal(10,2)
+ * 2. PEDIDOS TIENDA (store_orders):
+ *    - Pedidos realizados en tienda
+ *    - seller_employee_id: Empleado que toma el pedido
+ *    - delivery_employee_id: Empleado que entrega
  * 
- * Se relaciona con:
- * - employees: empleado que registra/atiende el pedido
- * - clients: cliente que realiza el pedido
- * - order_details: productos del pedido
- * - order_movements: historial de cambios
+ * 3. PEDIDOS WEB (web_orders):
+ *    - Pedidos realizados por cliente web
+ *    - delivery_employee_id: Empleado que entrega
  */
 @Component
 public class V8__CreateOrdersTable implements JavaMigration {
     @Override
     public void migrate(Context context) throws Exception {
         try (var statement = context.getConnection().createStatement()) {
+            // Tabla base de pedidos
             statement.execute("""
                 CREATE TABLE orders (
                     id BIGINT NOT NULL AUTO_INCREMENT,
-                    order_number VARCHAR(50) NOT NULL,
-                    employee_id BIGINT,
-                    client_id BIGINT NOT NULL,
-                    total_amount DECIMAL(10,2) NOT NULL,
-                    payment_method VARCHAR(50),
-                    delivery_address TEXT,
-                    delivery_date TIMESTAMP,
-                    status VARCHAR(20) NOT NULL DEFAULT 'pending',
+                    customer_id BIGINT NOT NULL,
+                    orderable_type VARCHAR(50) NOT NULL,
+                    orderable_id BIGINT NOT NULL,
+                    delivery_date DATE NOT NULL,
+                    delivery_address TEXT NOT NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                     PRIMARY KEY (id),
-                    UNIQUE KEY unique_order_number (order_number),
-                    INDEX idx_employee_id (employee_id),
-                    INDEX idx_client_id (client_id),
-                    CONSTRAINT fk_orders_employee_id FOREIGN KEY (employee_id) REFERENCES employees(id),
-                    CONSTRAINT fk_orders_client_id FOREIGN KEY (client_id) REFERENCES clients(id)
+                    INDEX idx_customer (customer_id),
+                    INDEX idx_orderable (orderable_type, orderable_id),
+                    INDEX idx_delivery_date (delivery_date),
+                    CONSTRAINT fk_orders_customer 
+                        FOREIGN KEY (customer_id) REFERENCES customers(id)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            """);
+
+            // Tabla para pedidos en tienda (2 empleados: vendedor y repartidor)
+            statement.execute("""
+                CREATE TABLE store_orders (
+                    id BIGINT NOT NULL AUTO_INCREMENT,
+                    seller_employee_id BIGINT NOT NULL,
+                    delivery_employee_id BIGINT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    PRIMARY KEY (id),
+                    INDEX idx_seller (seller_employee_id),
+                    INDEX idx_delivery (delivery_employee_id),
+                    CONSTRAINT fk_store_orders_seller
+                        FOREIGN KEY (seller_employee_id) REFERENCES employees(id),
+                    CONSTRAINT fk_store_orders_delivery
+                        FOREIGN KEY (delivery_employee_id) REFERENCES employees(id)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            """);
+
+            // Tabla para pedidos web (solo empleado repartidor)
+            statement.execute("""
+                CREATE TABLE web_orders (
+                    id BIGINT NOT NULL AUTO_INCREMENT,
+                    delivery_employee_id BIGINT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    PRIMARY KEY (id),
+                    INDEX idx_delivery (delivery_employee_id),
+                    CONSTRAINT fk_web_orders_delivery
+                        FOREIGN KEY (delivery_employee_id) REFERENCES employees(id)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
             """);
         }
@@ -68,6 +95,6 @@ public class V8__CreateOrdersTable implements JavaMigration {
 
     @Override
     public String getDescription() { 
-        return "Create orders table";
+        return "Create orders tables";
     }
 }

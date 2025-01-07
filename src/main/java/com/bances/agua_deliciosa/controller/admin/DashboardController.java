@@ -21,7 +21,7 @@ public class DashboardController extends AdminController {
         this.dashboardService = dashboardService;
     }
     
-    @GetMapping({"/", "/dashboard"})
+    @GetMapping({"/", "/dashboard"})  // Maneja tanto /admin como /admin/dashboard
     public String index(Model model) {
         log.info("Accediendo al dashboard de admin");
         setupCommonAttributes(model, "dashboard");

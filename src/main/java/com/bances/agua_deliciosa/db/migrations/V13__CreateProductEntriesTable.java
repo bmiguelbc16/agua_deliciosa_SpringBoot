@@ -8,21 +8,27 @@ import org.springframework.stereotype.Component;
 /**
  * Migración para crear la tabla de entradas de productos.
  * 
- * La tabla product_entries almacena:
- * - Campos principales: user_id, supplier_name, date, total
- * - Campos opcionales: invoice_number, notes
- * - Estado y timestamps automáticos
+ * ESTRUCTURA:
+ * ----------
+ * Registro principal de entradas de productos:
+ * - employee_id: Empleado que registra
+ * - description: Descripción del ingreso
+ * - movement_type: Impacto monetario
+ *   * NEGATIVE: Pérdida (-dinero, ej: compras)
+ *   * NEUTRAL: Sin impacto (0, ej: devoluciones)
+ *   * POSITIVE: Ganancia (+dinero, casos especiales)
  * 
- * Características:
- * - Índice en user_id
- * - Clave foránea a users
- * - Estado predeterminado 'pending'
- * - Total con precisión decimal(10,2)
+ * EJEMPLOS:
+ * --------
+ * 1. Compra de bidones nuevos:
+ *    - employee_id: 1
+ *    - description: "Compra de bidones nuevos"
+ *    - movement_type: "NEGATIVE"
  * 
- * Se relaciona con:
- * - users: usuario que registra la entrada
- * - product_entry_details: productos ingresados
- * Uso: Control de entradas de inventario
+ * 2. Devolución de bidones:
+ *    - employee_id: 1
+ *    - description: "Devolución de bidones vacíos"
+ *    - movement_type: "NEUTRAL"
  */
 @Component
 public class V13__CreateProductEntriesTable implements JavaMigration {
@@ -32,18 +38,17 @@ public class V13__CreateProductEntriesTable implements JavaMigration {
             statement.execute("""
                 CREATE TABLE product_entries (
                     id BIGINT NOT NULL AUTO_INCREMENT,
-                    user_id BIGINT NOT NULL,
-                    supplier_name VARCHAR(255) NOT NULL,
-                    date DATE NOT NULL,
-                    invoice_number VARCHAR(50),
-                    total DECIMAL(10,2) NOT NULL,
-                    notes TEXT,
-                    status VARCHAR(20) NOT NULL DEFAULT 'pending',
+                    employee_id BIGINT NOT NULL,
+                    movement_type ENUM('NEGATIVE', 'NEUTRAL', 'POSITIVE') NOT NULL,
+                    description TEXT NOT NULL,
+                    total_amount DECIMAL(10,2) NOT NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                     PRIMARY KEY (id),
-                    INDEX idx_user_id (user_id),
-                    CONSTRAINT fk_product_entries_user_id FOREIGN KEY (user_id) REFERENCES users(id)
+                    INDEX idx_employee (employee_id),
+                    INDEX idx_movement_type (movement_type),
+                    CONSTRAINT fk_entries_employee
+                        FOREIGN KEY (employee_id) REFERENCES employees(id)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
             """);
         }

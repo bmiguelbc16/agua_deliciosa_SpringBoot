@@ -1,65 +1,105 @@
 package com.bances.agua_deliciosa.model;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
-import jakarta.persistence.*;
-import lombok.Data;
-
-@Data
-@Entity
-@Table(name = "products")
-public class Product {
-    
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @Column(nullable = false)
+public class Product extends BaseModel {
     private String name;
-
     private String description;
+    private BigDecimal salePrice;
+    private boolean forSale;
+    private int stock;
+    private List<OrderDetail> orderDetails = new ArrayList<>();
+    private List<ProductOutputDetail> outputDetails = new ArrayList<>();
+    private List<ProductEntryDetail> entryDetails = new ArrayList<>();
 
-    @Column(name = "unit_price", nullable = false, precision = 10, scale = 2)
-    private BigDecimal unitPrice;
-
-    @Column(nullable = false)
-    private Integer stock = 0;
-
-    @Column(name = "min_stock")
-    private Integer minStock;
-
-    @Column(name = "max_stock")
-    private Integer maxStock;
-
-    @Column(nullable = false)
-    private boolean active = true;
-
-    @OneToMany(mappedBy = "product")
-    private Set<OrderDetail> orderDetails = new HashSet<>();
-
-    @OneToMany(mappedBy = "product")
-    private Set<ProductOutputDetail> outputDetails = new HashSet<>();
-
-    @OneToMany(mappedBy = "product")
-    private Set<ProductEntryDetail> entryDetails = new HashSet<>();
-
-    @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
-
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
+    public String getName() {
+        return name;
     }
 
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public BigDecimal getSalePrice() {
+        return salePrice;
+    }
+
+    public void setSalePrice(BigDecimal salePrice) {
+        this.salePrice = salePrice;
+    }
+
+    public boolean isForSale() {
+        return forSale;
+    }
+
+    public void setForSale(boolean forSale) {
+        this.forSale = forSale;
+    }
+
+    public int getStock() {
+        return stock;
+    }
+
+    public void setStock(int stock) {
+        this.stock = stock;
+    }
+
+    public List<OrderDetail> getOrderDetails() {
+        return new ArrayList<>(orderDetails);
+    }
+
+    public void setOrderDetails(List<OrderDetail> orderDetails) {
+        this.orderDetails = orderDetails != null ? new ArrayList<>(orderDetails) : new ArrayList<>();
+    }
+
+    public List<ProductOutputDetail> getOutputDetails() {
+        return new ArrayList<>(outputDetails);
+    }
+
+    public void setOutputDetails(List<ProductOutputDetail> outputDetails) {
+        this.outputDetails = outputDetails != null ? new ArrayList<>(outputDetails) : new ArrayList<>();
+    }
+
+    public List<ProductEntryDetail> getEntryDetails() {
+        return new ArrayList<>(entryDetails);
+    }
+
+    public void setEntryDetails(List<ProductEntryDetail> entryDetails) {
+        this.entryDetails = entryDetails != null ? new ArrayList<>(entryDetails) : new ArrayList<>();
+    }
+
+    public void addOrderDetail(OrderDetail detail) {
+        if (detail != null) {
+            orderDetails.add(detail);
+            detail.setProduct(this);
+        }
+    }
+
+    public void addOutputDetail(ProductOutputDetail detail) {
+        if (detail != null) {
+            outputDetails.add(detail);
+            detail.setProduct(this);
+        }
+    }
+
+    public void addEntryDetail(ProductEntryDetail detail) {
+        if (detail != null) {
+            entryDetails.add(detail);
+            detail.setProduct(this);
+        }
+    }
+
+    public void updateStock(int quantity) {
+        this.stock += quantity;
     }
 }

@@ -8,7 +8,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.bances.agua_deliciosa.service.auth.SecurityService;
-import com.bances.agua_deliciosa.util.Routes;
 
 @Controller
 public class LoginController extends AuthController {
@@ -26,21 +25,14 @@ public class LoginController extends AuthController {
     ) {
         if (authentication != null && authentication.isAuthenticated()) {
             // Si ya está autenticado, redirigir según el rol
-            if (authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ADMIN"))) {
-                logAction("LOGIN_REDIRECT", "Redirigiendo a dashboard de admin");
-                return redirect(Routes.Admin.DASHBOARD);
-            } 
-            if (authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_CLIENT"))) {
+            if (authentication.getAuthorities().contains(new SimpleGrantedAuthority("Client"))) {
                 logAction("LOGIN_REDIRECT", "Redirigiendo a dashboard de cliente");
-                return redirect(Routes.Client.DASHBOARD);
+                return redirect("/client/dashboard");
+            } else {
+                // Si es Admin o Employee
+                logAction("LOGIN_REDIRECT", "Redirigiendo a dashboard de admin");
+                return redirect("/admin/dashboard");
             }
-            if (authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_EMPLOYEE"))) {
-                logAction("LOGIN_REDIRECT", "Redirigiendo a dashboard de empleado");
-                return redirect(Routes.Admin.DASHBOARD);
-            }
-            
-            logAction("LOGIN_REDIRECT", "Usuario sin rol específico, redirigiendo a home");
-            return redirect("/");
         }
 
         setupCommonAttributes(model);
@@ -56,5 +48,15 @@ public class LoginController extends AuthController {
         }
 
         return view("login");
+    }
+
+    @GetMapping("/")
+    public String root(Authentication authentication) {
+        if (authentication != null && authentication.isAuthenticated()) {
+            if (authentication.getAuthorities().contains(new SimpleGrantedAuthority("Client"))) {
+                return "redirect:/client/dashboard";
+            }
+        }
+        return "redirect:/admin/dashboard";
     }
 }

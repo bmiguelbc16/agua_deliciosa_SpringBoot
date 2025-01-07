@@ -1,102 +1,76 @@
 package com.bances.agua_deliciosa.service.core;
 
-import com.bances.agua_deliciosa.model.Permission;
-import com.bances.agua_deliciosa.model.Role;
-import com.bances.agua_deliciosa.repository.PermissionRepository;
-import com.bances.agua_deliciosa.dto.admin.PermissionDTO;
-import lombok.RequiredArgsConstructor;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
+import com.bances.agua_deliciosa.model.Permission;
+import com.bances.agua_deliciosa.repository.PermissionRepository;
+import com.bances.agua_deliciosa.repository.RoleRepository;
 
 @Service
-@Transactional(readOnly = true)
-@RequiredArgsConstructor
 public class PermissionService {
-    
-    private final PermissionRepository permissionRepository;
 
-    public Set<Permission> getAllPermissions() {
-        return new HashSet<>(permissionRepository.findAll());
+    @Autowired
+    private PermissionRepository permissionRepository;
+
+    @Autowired
+    private RoleRepository roleRepository;
+
+    @Transactional(readOnly = true)
+    public Permission findById(Long id) {
+        return permissionRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Permission not found with id: " + id));
     }
 
-    public Set<Permission> getEmployeePermissions() {
-        List<Permission> allPermissions = permissionRepository.findAll();
-        return allPermissions.stream()
-            .filter(permission -> !permission.getName().startsWith("admin"))
-            .collect(Collectors.toSet());
+    @Transactional(readOnly = true)
+    public Permission findByName(String name) {
+        return permissionRepository.findByName(name)
+                .orElseThrow(() -> new RuntimeException("Permission not found with name: " + name));
     }
 
-    public Set<Permission> getClientPermissions() {
-        List<Permission> allPermissions = permissionRepository.findAll();
-        return allPermissions.stream()
-            .filter(permission -> permission.getName().startsWith("client"))
-            .collect(Collectors.toSet());
-    }
-
+    @Transactional(readOnly = true)
     public List<Permission> findAll() {
         return permissionRepository.findAll();
     }
 
-    public Permission findByName(String name) {
-        return permissionRepository.findByName(name)
-            .orElseThrow(() -> new RuntimeException("Permiso no encontrado: " + name));
-    }
-
-    public Permission getPermissionById(Long id) {
-        return permissionRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Permiso no encontrado con ID: " + id));
-    }
-
     @Transactional
-    public Permission createPermission(PermissionDTO dto) {
-        if (permissionRepository.existsByName(dto.getName())) {
-            throw new RuntimeException("Ya existe un permiso con ese nombre");
-        }
-
-        Permission permission = new Permission();
-        permission.setName(dto.getName());
-        permission.setDescription(dto.getDescription());
-
+    public Permission save(Permission permission) {
+        validatePermissionName(permission);
         return permissionRepository.save(permission);
     }
 
     @Transactional
-    public Permission update(Long id, PermissionDTO dto) {
-        Permission permission = getPermissionById(id);
-
-        if (!permission.getName().equals(dto.getName()) && 
-            permissionRepository.existsByName(dto.getName())) {
-            throw new RuntimeException("Ya existe un permiso con ese nombre");
-        }
-
-        permission.setName(dto.getName());
-        permission.setDescription(dto.getDescription());
-
-        return permissionRepository.save(permission);
-    }
-
-    @Transactional
-    public void deletePermission(Long id) {
-        Permission permission = getPermissionById(id);
-
-        // Verificar si el permiso está siendo usado por algún rol
-        boolean isUsedByRole = permissionRepository.findRolesUsingPermission(id).size() > 0;
+    public Permission update(Permission permission) {
+        Permission existingPermission = findById(permission.getId());
         
-        if (isUsedByRole) {
-            throw new RuntimeException("No se puede eliminar el permiso porque está siendo usado por roles");
+        if (!existingPermission.getName().equals(permission.getName())) {
+            validatePermissionName(permission);
         }
-
-        permissionRepository.delete(permission);
+        
+        return permissionRepository.save(permission);
     }
 
-    public Set<String> getRolePermissions(Role role) {
-        return role.getPermissions().stream()
-            .map(Permission::getName)
-            .collect(Collectors.toSet());
+    @Transactional
+    public void delete(Long id) {
+        findById(id); // Verificar que existe
+        int roleCount = roleRepository.countByPermissionId(id);
+        
+        if (roleCount > 0) {
+            throw new RuntimeException("Cannot delete permission that is being used by roles");
+        }
+        
+        permissionRepository.delete(id);
+    }
+
+    private void validatePermissionName(Permission permission) {
+        permissionRepository.findByName(permission.getName())
+                .ifPresent(existingPermission -> {
+                    if (!existingPermission.getId().equals(permission.getId())) {
+                        throw new RuntimeException("Permission name already exists");
+                    }
+                });
     }
 }

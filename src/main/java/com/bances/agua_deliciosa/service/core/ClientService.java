@@ -1,16 +1,16 @@
 package com.bances.agua_deliciosa.service.core;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import com.bances.agua_deliciosa.model.Client;
-import com.bances.agua_deliciosa.model.Gender;
-import com.bances.agua_deliciosa.dto.admin.ClientDTO;
-import com.bances.agua_deliciosa.repository.ClientRepository;
 import com.bances.agua_deliciosa.model.User;
+import com.bances.agua_deliciosa.repository.ClientRepository;
 import com.bances.agua_deliciosa.repository.UserRepository;
+
+import java.util.List;
 
 @Service
 public class ClientService {
@@ -21,74 +21,69 @@ public class ClientService {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private UserService userService;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
     @Transactional(readOnly = true)
-    public Page<Client> getClientsPage(Pageable pageable) {
-        return clientRepository.findClientsWithSearch(null, pageable);
+    public Client findById(Long id) {
+        return clientRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Client not found with id: " + id));
+    }
+
+    @Transactional(readOnly = true)
+    public List<Client> findAll() {
+        return clientRepository.findAll();
     }
 
     @Transactional
-    public Client createClient(ClientDTO clientDTO) {
-        Client client = new Client();
-        User user = new User();
+    public Client save(Client client, User user) {
+        validateNewClient(client);
         
-        // Mapear datos del DTO al usuario
-        user.setName(clientDTO.getName());
-        user.setLastName(clientDTO.getLastName());
-        user.setEmail(clientDTO.getEmail());
-        user.setPhoneNumber(clientDTO.getPhoneNumber());
-        user.setDocumentNumber(clientDTO.getDocumentNumber());
-        user.setBirthDate(clientDTO.getBirthDate());
-        user.setGender(Gender.valueOf(clientDTO.getGender()));
-        user.setActive(clientDTO.getActive());
-        user.setUserableType("Client");
+        // Encriptar contraseña y guardar usuario
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        User savedUser = userRepository.save(user);
         
-        // Guardar el usuario
-        user = userRepository.save(user);
+        // Asignar rol de cliente
+        userService.assignRole(savedUser, "ROLE_CLIENT");
         
-        // Asociar el usuario al cliente
-        client.setUser(user);
+        // Guardar cliente
+        Client savedClient = clientRepository.save(client);
         
-        return clientRepository.save(client);
+        return savedClient;
     }
 
     @Transactional
-    public Client updateClient(Long id, ClientDTO clientDTO) {
-        Client client = clientRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Client not found"));
+    public Client update(Client client) {
+        Client existingClient = findById(client.getId());
         
-        User user = client.getUser();
-        
-        // Actualizar datos del usuario
-        user.setName(clientDTO.getName());
-        user.setLastName(clientDTO.getLastName());
-        user.setEmail(clientDTO.getEmail());
-        user.setPhoneNumber(clientDTO.getPhoneNumber());
-        user.setDocumentNumber(clientDTO.getDocumentNumber());
-        user.setBirthDate(clientDTO.getBirthDate());
-        user.setGender(Gender.valueOf(clientDTO.getGender()));
-        user.setActive(clientDTO.getActive());
-        
-        // Guardar los cambios
-        userRepository.save(user);
-        return clientRepository.save(client);
-    }
-
-    @Transactional
-    public void deleteClient(Long id) {
-        Client client = clientRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Client not found"));
-        
-        // Eliminar el usuario asociado
-        if (client.getUser() != null) {
-            userRepository.delete(client.getUser());
+        if (!existingClient.getEmail().equals(client.getEmail())) {
+            validateEmail(client.getEmail());
         }
         
-        clientRepository.delete(client);
+        return clientRepository.save(client);
     }
 
-    @Transactional(readOnly = true)
-    public Client findByUserId(Long userId) {
-        return clientRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Client not found for user: " + userId));
+    @Transactional
+    public void delete(Long id) {
+        Client client = findById(id);
+        clientRepository.delete(id);
+        
+        // Si tiene usuario asociado, desactivarlo también
+        if (client.getUser() != null) {
+            userRepository.delete(client.getUser().getId());
+        }
+    }
+
+    private void validateNewClient(Client client) {
+        validateEmail(client.getEmail());
+    }
+
+    private void validateEmail(String email) {
+        if (clientRepository.existsByEmail(email)) {
+            throw new RuntimeException("Email already exists: " + email);
+        }
     }
 }

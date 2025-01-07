@@ -1,12 +1,13 @@
 package com.bances.agua_deliciosa.security;
 
 import java.util.Collection;
-import java.util.List;
+import java.util.Collections;
 
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import com.bances.agua_deliciosa.model.Role;
 import com.bances.agua_deliciosa.model.User;
 
 public class UserSecurity implements UserDetails {
@@ -19,7 +20,8 @@ public class UserSecurity implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority(user.getRole().getName()));
+        Role role = user.getRoles().isEmpty() ? null : user.getRoles().iterator().next();
+        return Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + (role != null ? role.getName() : "USER")));
     }
 
     @Override

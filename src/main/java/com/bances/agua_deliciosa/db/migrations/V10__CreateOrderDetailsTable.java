@@ -6,23 +6,29 @@ import org.flywaydb.core.api.MigrationVersion;
 import org.springframework.stereotype.Component;
 
 /**
- * Migración para crear la tabla de detalles de pedidos.
+ * Migración para crear la tabla de detalles de pedido.
  * 
- * La tabla order_details almacena:
- * - Campos principales: order_id, product_id, quantity
- * - Campos de precio: unit_price, subtotal
- * - Timestamps automáticos
+ * ESTRUCTURA:
+ * ----------
+ * Detalles de cada pedido:
+ * - order_id: ID del pedido
+ * - product_id: Producto pedido
+ * - quantity: Cantidad
+ * - unit_price: Precio unitario
  * 
- * Características:
- * - Índices en order_id y product_id
- * - Claves foráneas a orders y products
- * - Precios con precisión decimal(10,2)
- * - Cantidad obligatoria
+ * EJEMPLOS:
+ * --------
+ * Para un pedido de bidones:
+ * 1. Cabecera (orders):
+ *    - customer_id: 1
+ *    - status: "PENDING"
+ *    - notes: "Entregar en la tarde"
  * 
- * Se relaciona con:
- * - orders: pedido al que pertenece
- * - products: producto incluido
- * Uso: Desglose de productos por pedido
+ * 2. Detalle (order_details):
+ *    - order_id: ID del pedido
+ *    - product_id: ID del bidón
+ *    - quantity: 5
+ *    - unit_price: 15.00
  */
 @Component
 public class V10__CreateOrderDetailsTable implements JavaMigration {
@@ -36,14 +42,16 @@ public class V10__CreateOrderDetailsTable implements JavaMigration {
                     product_id BIGINT NOT NULL,
                     quantity INT NOT NULL,
                     unit_price DECIMAL(10,2) NOT NULL,
-                    subtotal DECIMAL(10,2) NOT NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                     PRIMARY KEY (id),
-                    INDEX idx_order_id (order_id),
-                    INDEX idx_product_id (product_id),
-                    CONSTRAINT fk_order_details_order_id FOREIGN KEY (order_id) REFERENCES orders(id),
-                    CONSTRAINT fk_order_details_product_id FOREIGN KEY (product_id) REFERENCES products(id)
+                    INDEX idx_order (order_id),
+                    INDEX idx_product (product_id),
+                    CONSTRAINT fk_order_details_order
+                        FOREIGN KEY (order_id) REFERENCES orders(id),
+                    CONSTRAINT fk_order_details_product
+                        FOREIGN KEY (product_id) REFERENCES products(id),
+                    CONSTRAINT chk_quantity CHECK (quantity > 0)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
             """);
         }

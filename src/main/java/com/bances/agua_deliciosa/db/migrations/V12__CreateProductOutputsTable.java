@@ -8,21 +8,36 @@ import org.springframework.stereotype.Component;
 /**
  * Migración para crear la tabla de salidas de productos.
  * 
- * La tabla product_outputs almacena:
- * - Campos principales: user_id, date, status
- * - Campo opcional: notes
- * - Timestamps automáticos
+ * ESTRUCTURA:
+ * ----------
+ * Registro principal de salidas de productos:
+ * - employee_id: Empleado que registra
+ * - order_id: Pedido (si es venta)
+ * - movement_type: Impacto monetario
+ *   * POSITIVE: Ganancia (+dinero, ej: ventas)
+ *   * NEGATIVE: Pérdida (-dinero, ej: mantenimiento)
+ *   * NEUTRAL: Sin impacto (0, ej: elaboración)
+ * - description: Descripción de la salida
  * 
- * Características:
- * - Índice en user_id
- * - Clave foránea a users
- * - Estado predeterminado 'pending'
- * - Fecha obligatoria
+ * EJEMPLOS:
+ * --------
+ * 1. Venta de bidones:
+ *    - employee_id: 1
+ *    - order_id: 123
+ *    - description: "Venta de bidones de agua"
+ *    - movement_type: "POSITIVE"
  * 
- * Se relaciona con:
- * - users: usuario que registra la salida
- * - product_output_details: productos retirados
- * Uso: Control de salidas de inventario
+ * 2. Envío a mantenimiento:
+ *    - employee_id: 1
+ *    - order_id: null
+ *    - description: "Envío de máquinas a mantenimiento"
+ *    - movement_type: "NEGATIVE"
+ * 
+ * 3. Elaboración de agua:
+ *    - employee_id: 1
+ *    - order_id: null
+ *    - description: "Bidones para llenado"
+ *    - movement_type: "NEUTRAL"
  */
 @Component
 public class V12__CreateProductOutputsTable implements JavaMigration {
@@ -32,15 +47,21 @@ public class V12__CreateProductOutputsTable implements JavaMigration {
             statement.execute("""
                 CREATE TABLE product_outputs (
                     id BIGINT NOT NULL AUTO_INCREMENT,
-                    user_id BIGINT NOT NULL,
-                    date DATE NOT NULL,
-                    notes TEXT,
-                    status VARCHAR(20) NOT NULL DEFAULT 'pending',
+                    employee_id BIGINT NOT NULL,
+                    order_id BIGINT,
+                    movement_type ENUM('NEGATIVE', 'NEUTRAL', 'POSITIVE') NOT NULL,
+                    description TEXT NOT NULL,
+                    total_amount DECIMAL(10,2) NOT NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                     PRIMARY KEY (id),
-                    INDEX idx_user_id (user_id),
-                    CONSTRAINT fk_product_outputs_user_id FOREIGN KEY (user_id) REFERENCES users(id)
+                    INDEX idx_employee (employee_id),
+                    INDEX idx_order (order_id),
+                    INDEX idx_movement_type (movement_type),
+                    CONSTRAINT fk_outputs_employee
+                        FOREIGN KEY (employee_id) REFERENCES employees(id),
+                    CONSTRAINT fk_outputs_order
+                        FOREIGN KEY (order_id) REFERENCES orders(id)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
             """);
         }

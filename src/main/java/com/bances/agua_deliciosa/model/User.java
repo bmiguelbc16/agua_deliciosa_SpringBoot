@@ -2,94 +2,200 @@ package com.bances.agua_deliciosa.model;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
-import jakarta.persistence.*;
-import lombok.Data;
-import lombok.Builder;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
-
-@Data
-@Entity
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-@Table(name = "users")
-public class User {
-    
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @Column(name = "name", nullable = false)
+public class User extends BaseModel {
     private String name;
-
-    @Column(name = "last_name", nullable = false)
     private String lastName;
-
-    @Column(nullable = false, unique = true)
     private String email;
-
-    @Column(nullable = false)
-    private String password;
-
-    @Column(name = "phone_number")
-    private String phoneNumber;
-
-    @Column(name = "document_number")
     private String documentNumber;
-
-    @Column(nullable = false)
-    @Enumerated(EnumType.STRING)
-    private Gender gender;
-
-    @Column(name = "birth_date")
+    private String password;
     private LocalDate birthDate;
-
-    @ManyToOne
-    @JoinColumn(name = "role_id")
+    private String gender;
+    private String phoneNumber;
     private Role role;
-
-    @Column(name = "userable_type", nullable = false)
-    private String userableType; // "Client" o "Employee"
-
-    @Column(name = "userable_id", nullable = false)
-    private Long userableId; // ID relacionado (Client o Employee)
-
-    @Column(name = "email_verified_at")
+    private String userableType;
+    private Long userableId;
     private LocalDateTime emailVerifiedAt;
-
-    @Column(name = "remember_token", length = 100)
     private String rememberToken;
-
-    @Column(nullable = false)
-    @Builder.Default
     private boolean active = true;
+    private List<UserToken> tokens = new ArrayList<>();
+    private List<UserVerification> verifications = new ArrayList<>();
+    private List<PasswordReset> passwordResets = new ArrayList<>();
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
-    @Builder.Default
-    private Set<UserToken> tokens = new HashSet<>();
-
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
-    @Builder.Default
-    private Set<UserVerification> verifications = new HashSet<>();
-
-    @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
-
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
+    // Getters
+    public String getName() {
+        return name;
     }
 
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+    public String getLastName() {
+        return lastName;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public String getDocumentNumber() {
+        return documentNumber;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public LocalDate getBirthDate() {
+        return birthDate;
+    }
+
+    public String getGender() {
+        return gender;
+    }
+
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
+
+    public Role getRole() {
+        return role;
+    }
+
+    public String getUserableType() {
+        return userableType;
+    }
+
+    public Long getUserableId() {
+        return userableId;
+    }
+
+    public LocalDateTime getEmailVerifiedAt() {
+        return emailVerifiedAt;
+    }
+
+    public String getRememberToken() {
+        return rememberToken;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public List<UserToken> getTokens() {
+        return new ArrayList<>(tokens);
+    }
+
+    public List<UserVerification> getVerifications() {
+        return new ArrayList<>(verifications);
+    }
+
+    public List<PasswordReset> getPasswordResets() {
+        return new ArrayList<>(passwordResets);
+    }
+
+    // Setters
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public void setDocumentNumber(String documentNumber) {
+        this.documentNumber = documentNumber;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public void setBirthDate(LocalDate birthDate) {
+        this.birthDate = birthDate;
+    }
+
+    public void setGender(String gender) {
+        this.gender = gender;
+    }
+
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
+    }
+
+    public void setUserableType(String userableType) {
+        this.userableType = userableType;
+    }
+
+    public void setUserableId(Long userableId) {
+        this.userableId = userableId;
+    }
+
+    public void setEmailVerifiedAt(LocalDateTime emailVerifiedAt) {
+        this.emailVerifiedAt = emailVerifiedAt;
+    }
+
+    public void setRememberToken(String rememberToken) {
+        this.rememberToken = rememberToken;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
+    }
+
+    // Utility methods
+    public String getFullName() {
+        return name + " " + lastName;
+    }
+
+    public boolean isVerified() {
+        return emailVerifiedAt != null;
+    }
+
+    public boolean hasPermission(String permissionName) {
+        return role != null && role.hasPermission(permissionName);
+    }
+
+    public void addToken(UserToken token) {
+        if (token != null) {
+            tokens.add(token);
+        }
+    }
+
+    public void removeToken(UserToken token) {
+        if (token != null) {
+            tokens.remove(token);
+        }
+    }
+
+    public void addVerification(UserVerification verification) {
+        if (verification != null) {
+            verifications.add(verification);
+        }
+    }
+
+    public void removeVerification(UserVerification verification) {
+        if (verification != null) {
+            verifications.remove(verification);
+        }
+    }
+
+    public void addPasswordReset(PasswordReset reset) {
+        if (reset != null) {
+            passwordResets.add(reset);
+        }
+    }
+
+    public void removePasswordReset(PasswordReset reset) {
+        if (reset != null) {
+            passwordResets.remove(reset);
+        }
     }
 }

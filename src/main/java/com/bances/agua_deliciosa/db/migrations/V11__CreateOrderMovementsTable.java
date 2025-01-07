@@ -6,43 +6,51 @@ import org.flywaydb.core.api.MigrationVersion;
 import org.springframework.stereotype.Component;
 
 /**
- * Migración para crear la tabla de movimientos de pedidos.
+ * Migración para crear las tablas de movimientos de pedidos.
  * 
- * La tabla order_movements almacena:
- * - Campos principales: order_id, user_id, status
- * - Campo opcional: notes
- * - Timestamps automáticos
+ * ESTRUCTURA:
+ * ----------
+ * 1. order_movements:
+ *    - Tabla maestra de movimientos posibles
+ *    - Ejemplo: "En preparación", "En camino", etc.
  * 
- * Características:
- * - Índices en order_id y user_id
- * - Claves foráneas a orders y users
- * - Estado obligatorio
- * - Notas opcionales en formato TEXT
- * 
- * Se relaciona con:
- * - orders: pedido que se está rastreando
- * - users: usuario que registra el movimiento
- * Uso: Auditoría de cambios en pedidos
+ * 2. order_movement_details:
+ *    - Tabla relacional entre orders y movements
+ *    - Registra qué movimientos ha tenido cada orden
  */
 @Component
 public class V11__CreateOrderMovementsTable implements JavaMigration {
     @Override
     public void migrate(Context context) throws Exception {
         try (var statement = context.getConnection().createStatement()) {
+            // Tabla maestra de movimientos
             statement.execute("""
                 CREATE TABLE order_movements (
                     id BIGINT NOT NULL AUTO_INCREMENT,
-                    order_id BIGINT NOT NULL,
-                    user_id BIGINT NOT NULL,
-                    status VARCHAR(20) NOT NULL,
-                    notes TEXT,
+                    title VARCHAR(100) NOT NULL,
+                    description TEXT NOT NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                     PRIMARY KEY (id),
-                    INDEX idx_order_id (order_id),
-                    INDEX idx_user_id (user_id),
-                    CONSTRAINT fk_order_movements_order_id FOREIGN KEY (order_id) REFERENCES orders(id),
-                    CONSTRAINT fk_order_movements_user_id FOREIGN KEY (user_id) REFERENCES users(id)
+                    UNIQUE KEY unique_title (title)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            """);
+
+            // Tabla relacional de órdenes y movimientos
+            statement.execute("""
+                CREATE TABLE order_movement_details (
+                    id BIGINT NOT NULL AUTO_INCREMENT,
+                    order_id BIGINT NOT NULL,
+                    movement_id BIGINT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    PRIMARY KEY (id),
+                    INDEX idx_order (order_id),
+                    INDEX idx_movement (movement_id),
+                    CONSTRAINT fk_movement_details_order 
+                        FOREIGN KEY (order_id) REFERENCES orders(id),
+                    CONSTRAINT fk_movement_details_movement 
+                        FOREIGN KEY (movement_id) REFERENCES order_movements(id)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
             """);
         }
@@ -61,6 +69,6 @@ public class V11__CreateOrderMovementsTable implements JavaMigration {
 
     @Override
     public String getDescription() { 
-        return "Create order movements table";
+        return "Create order movements tables";
     }
 }
