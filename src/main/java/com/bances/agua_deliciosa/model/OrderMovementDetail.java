@@ -1,40 +1,48 @@
 package com.bances.agua_deliciosa.model;
 
 public class OrderMovementDetail extends BaseModel {
-    private Order order;
-    private OrderStatus fromStatus;
-    private OrderStatus toStatus;
-    private String description;
+    private Long orderId;
+    private Long movementId;
 
-    public Order getOrder() {
-        return order;
+    public OrderMovementDetail() {
+        super();
     }
 
-    public void setOrder(Order order) {
-        this.order = order;
+    public Long getOrderId() {
+        return orderId;
     }
 
-    public OrderStatus getFromStatus() {
-        return fromStatus;
+    public void setOrderId(Long orderId) {
+        this.orderId = orderId;
     }
 
-    public void setFromStatus(OrderStatus fromStatus) {
-        this.fromStatus = fromStatus;
+    public Long getMovementId() {
+        return movementId;
     }
 
-    public OrderStatus getToStatus() {
-        return toStatus;
+    public void setMovementId(Long movementId) {
+        this.movementId = movementId;
     }
 
-    public void setToStatus(OrderStatus toStatus) {
-        this.toStatus = toStatus;
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof OrderMovementDetail)) return false;
+        OrderMovementDetail that = (OrderMovementDetail) o;
+        return orderId != null && orderId.equals(that.orderId) &&
+               movementId != null && movementId.equals(that.movementId);
     }
 
-    public String getDescription() {
-        return description;
+    @Override
+    public int hashCode() {
+        int result = orderId != null ? orderId.hashCode() : 0;
+        result = 31 * result + (movementId != null ? movementId.hashCode() : 0);
+        return result;
     }
 
-    public void setDescription(String description) {
-        this.description = description;
+    @Override
+    public String toString() {
+        return "OrderMovementDetail [id=" + getId() + ", orderId=" + orderId + 
+               ", movementId=" + movementId + "]";
     }
 }

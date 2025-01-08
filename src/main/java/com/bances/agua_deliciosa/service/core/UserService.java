@@ -1,74 +1,83 @@
 package com.bances.agua_deliciosa.service.core;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import com.bances.agua_deliciosa.model.User;
+import com.bances.agua_deliciosa.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.bances.agua_deliciosa.model.Role;
-import com.bances.agua_deliciosa.model.User;
-import com.bances.agua_deliciosa.repository.RoleRepository;
-import com.bances.agua_deliciosa.repository.UserRepository;
+import java.util.List;
+import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
 public class UserService {
-
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private RoleRepository roleRepository;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Transactional(readOnly = true)
-    public User findByEmail(String email) {
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
-    }
-
-    @Transactional
-    public void assignRole(User user, String roleName) {
-        Role currentRole = user.getRoles().isEmpty() ? null : user.getRoles().iterator().next();
-        
-        if (currentRole != null && currentRole.getName().equals(roleName)) {
-            return;
-        }
-
-        Role newRole = roleRepository.findByName(roleName)
-                .orElseThrow(() -> new RuntimeException("Role not found: " + roleName));
-        
-        user.getRoles().clear();
-        user.getRoles().add(newRole);
-        userRepository.save(user);
+    public Optional<User> findById(Long id) {
+        return userRepository.findById(id);
     }
 
     @Transactional(readOnly = true)
-    public User getProfile(String email) {
-        return findByEmail(email);
+    public List<User> findAll() {
+        return userRepository.findAll();
+    }
+
+    @Transactional(readOnly = true)
+    public List<User> findAllEmployees() {
+        return userRepository.findByUserableType("Employee");
+    }
+
+    @Transactional(readOnly = true)
+    public List<User> findAllClients() {
+        return userRepository.findByUserableType("Client");
     }
 
     @Transactional
-    public void updateProfile(User user) {
-        if (user.getEmail() != null && userRepository.existsByEmailAndIdNot(user.getEmail(), user.getId())) {
-            throw new RuntimeException("Email already registered");
-        }
-
-        if (user.getPassword() != null) {
+    public User save(User user) {
+        if (user.getPassword() != null && !user.getPassword().isEmpty()) {
             user.setPassword(passwordEncoder.encode(user.getPassword()));
         }
-
-        userRepository.save(user);
+        return userRepository.save(user);
     }
 
     @Transactional
-    public User createUser(User user) {
-        if (user.getPassword() == null) {
-            throw new RuntimeException("Password is required");
-        }
-        
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
+    public void deleteById(Long id) {
+        userRepository.deleteById(id);
+    }
+
+    @Transactional
+    public User createUser(User user, String password) {
+        user.setPassword(passwordEncoder.encode(password));
         return userRepository.save(user);
+    }
+
+    @Transactional
+    public void updatePassword(User user, String newPassword) {
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+    }
+
+    @Transactional(readOnly = true)
+    public long countEmployees() {
+        return userRepository.countByUserableType("Employee");
+    }
+
+    @Transactional(readOnly = true)
+    public long countClients() {
+        return userRepository.countByUserableType("Client");
+    }
+
+    @Transactional(readOnly = true)
+    public List<User> findTopCustomers(int limit) {
+        return userRepository.findTopByOrders(limit);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<User> findByEmail(String email) {
+        return userRepository.findByEmail(email);
     }
 }

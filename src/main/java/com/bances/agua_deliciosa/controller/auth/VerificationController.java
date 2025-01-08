@@ -1,47 +1,40 @@
 package com.bances.agua_deliciosa.controller.auth;
 
+import com.bances.agua_deliciosa.service.auth.AuthenticationService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import com.bances.agua_deliciosa.service.auth.AuthenticationService;
-import com.bances.agua_deliciosa.service.auth.SecurityService;
-
-import lombok.extern.slf4j.Slf4j;
-
-@Slf4j
 @Controller
-@RequestMapping("/verify")
-public class VerificationController extends AuthController {
-    
+@RequestMapping("/auth/verify")
+@RequiredArgsConstructor
+public class VerificationController {
     private final AuthenticationService authService;
-    
-    public VerificationController(SecurityService securityService, AuthenticationService authService) {
-        super(securityService);
-        this.authService = authService;
+
+    protected String redirect(String path) {
+        return "redirect:" + path;
     }
-    
-    @GetMapping("/email")
-    public String verifyEmail(
-        @RequestParam(required = false) String token,
-        @RequestParam(required = false) String email,
-        Model model,
-        RedirectAttributes redirectAttributes
-    ) {
-        if (token == null || token.isEmpty()) {
-            setupCommonAttributes(model);
-            return view("verify-email");
-        }
-        
+
+    protected void addSuccessMessage(RedirectAttributes redirectAttributes, String message) {
+        redirectAttributes.addFlashAttribute("successMessage", message);
+    }
+
+    protected void addErrorMessage(RedirectAttributes redirectAttributes, String message) {
+        redirectAttributes.addFlashAttribute("errorMessage", message);
+    }
+
+    @GetMapping
+    public String verifyEmail(@RequestParam String token, @RequestParam String email, RedirectAttributes redirectAttributes) {
         try {
             authService.verifyEmail(token, email);
             addSuccessMessage(redirectAttributes, "Email verificado exitosamente");
-            return redirect("/login");
+            return redirect("/auth/login");
         } catch (Exception e) {
-            return handleAuthError(e, redirectAttributes, "/verify/email");
+            addErrorMessage(redirectAttributes, e.getMessage());
+            return redirect("/auth/login");
         }
     }
 }

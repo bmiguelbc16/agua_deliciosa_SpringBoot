@@ -2,7 +2,6 @@ package com.bances.agua_deliciosa.model;
 
 public enum OrderStatus {
     PENDING,
-    PROCESSING,
     COMPLETED,
     CANCELLED
 }

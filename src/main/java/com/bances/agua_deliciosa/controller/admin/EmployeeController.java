@@ -1,77 +1,135 @@
 package com.bances.agua_deliciosa.controller.admin;
 
-import java.util.HashMap;
-import java.util.Map;
-import org.springframework.data.domain.Page;
+import com.bances.agua_deliciosa.model.Role;
+import com.bances.agua_deliciosa.model.User;
+import com.bances.agua_deliciosa.service.core.RoleService;
+import com.bances.agua_deliciosa.service.core.UserService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
-
-import com.bances.agua_deliciosa.dto.admin.EmployeeDTO;
-import com.bances.agua_deliciosa.model.Employee;
-import com.bances.agua_deliciosa.service.auth.SecurityService;
-import com.bances.agua_deliciosa.service.core.EmployeeService;
-
-import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 @RequestMapping("/admin/employees")
-public class EmployeeController extends AdminController {
+@RequiredArgsConstructor
+public class EmployeeController {
+    private final UserService userService;
+    private final RoleService roleService;
 
-    private final EmployeeService employeeService;
+    protected String view(String viewName) {
+        return "admin/employees/" + viewName;
+    }
 
-    public EmployeeController(SecurityService securityService, EmployeeService employeeService) {
-        super(securityService);
-        this.employeeService = employeeService;
+    protected String redirect(String path) {
+        return "redirect:" + path;
+    }
+
+    protected void addSuccessMessage(RedirectAttributes redirectAttributes, String message) {
+        redirectAttributes.addFlashAttribute("successMessage", message);
+    }
+
+    protected void addErrorMessage(RedirectAttributes redirectAttributes, String message) {
+        redirectAttributes.addFlashAttribute("errorMessage", message);
     }
 
     @GetMapping
-    public String index(
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int size,
-            Model model) {
-        Page<Employee> employeePage = employeeService.getEmployees(page, size, null);
-        model.addAttribute("employees", employeePage);
-        return "admin/employees/index";
+    public String index(Model model) {
+        model.addAttribute("employees", userService.findAllEmployees());
+        return view("index");
     }
 
-    @GetMapping("/api")
-    @ResponseBody
-    public Map<String, Object> getEmployees(
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        Page<Employee> employeePage = employeeService.getEmployees(page, size, null);
-        Map<String, Object> response = new HashMap<>();
-        response.put("employees", employeePage.getContent());
-        response.put("currentPage", employeePage.getNumber());
-        response.put("totalItems", employeePage.getTotalElements());
-        response.put("totalPages", employeePage.getTotalPages());
-        return response;
+    @GetMapping("/create")
+    public String create(Model model) {
+        model.addAttribute("employee", new User());
+        model.addAttribute("roles", roleService.findEmployeeRoles());
+        return view("form");
     }
 
     @PostMapping
-    @ResponseBody
-    public Employee create(@Valid @RequestBody EmployeeDTO employeeDTO) {
-        return employeeService.createEmployee(employeeDTO);
+    public String store(
+            @RequestParam String name,
+            @RequestParam String email,
+            @RequestParam String password,
+            @RequestParam Long roleId,
+            RedirectAttributes redirectAttributes
+    ) {
+        try {
+            User employee = new User();
+            employee.setName(name);
+            employee.setEmail(email);
+            
+            Role role = roleService.findById(roleId)
+                    .orElseThrow(() -> new RuntimeException("Role not found"));
+            employee.setRoleId(role.getId());
+            
+            userService.createUser(employee, password);
+            addSuccessMessage(redirectAttributes, "Empleado creado exitosamente");
+            return redirect("/admin/employees");
+        } catch (Exception e) {
+            addErrorMessage(redirectAttributes, e.getMessage());
+            return redirect("/admin/employees/create");
+        }
     }
 
-    @PutMapping("/{id}")
-    @ResponseBody
-    public Employee update(@PathVariable Long id, @Valid @RequestBody EmployeeDTO employeeDTO) {
-        return employeeService.updateEmployee(id, employeeDTO);
+    @GetMapping("/{id}/edit")
+    public String edit(@PathVariable Long id, Model model) {
+        User employee = userService.findById(id)
+                .orElseThrow(() -> new RuntimeException("Employee not found"));
+        model.addAttribute("employee", employee);
+        model.addAttribute("roles", roleService.findEmployeeRoles());
+        return view("form");
+    }
+
+    @PostMapping("/{id}")
+    public String update(
+            @PathVariable Long id,
+            @RequestParam String name,
+            @RequestParam String email,
+            @RequestParam Long roleId,
+            RedirectAttributes redirectAttributes
+    ) {
+        try {
+            User employee = userService.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Employee not found"));
+            Role role = roleService.findById(roleId)
+                    .orElseThrow(() -> new RuntimeException("Role not found"));
+            
+            employee.setName(name);
+            employee.setEmail(email);
+            employee.setRoleId(role.getId());
+            
+            userService.save(employee);
+            addSuccessMessage(redirectAttributes, "Employee updated successfully");
+            return "redirect:/admin/employees";
+        } catch (Exception e) {
+            addErrorMessage(redirectAttributes, "Error updating employee: " + e.getMessage());
+            return "redirect:/admin/employees/" + id + "/edit";
+        }
+    }
+
+    @GetMapping("/{id}")
+    public String show(@PathVariable Long id, Model model) {
+        User employee = userService.findById(id)
+                .orElseThrow(() -> new RuntimeException("Employee not found"));
+        Role role = roleService.findById(employee.getRoleId())
+                .orElseThrow(() -> new RuntimeException("Role not found"));
+        model.addAttribute("employee", employee);
+        model.addAttribute("role", role);
+        return view("show");
     }
 
     @DeleteMapping("/{id}")
-    @ResponseBody
-    public void delete(@PathVariable Long id) {
-        employeeService.deleteEmployee(id);
+    public String destroy(
+            @PathVariable Long id,
+            RedirectAttributes redirectAttributes
+    ) {
+        try {
+            userService.deleteById(id);
+            addSuccessMessage(redirectAttributes, "Empleado eliminado exitosamente");
+        } catch (Exception e) {
+            addErrorMessage(redirectAttributes, e.getMessage());
+        }
+        return redirect("/admin/employees");
     }
 }

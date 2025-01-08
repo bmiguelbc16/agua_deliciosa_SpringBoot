@@ -1,94 +1,107 @@
 package com.bances.agua_deliciosa.controller.admin;
 
+import com.bances.agua_deliciosa.model.Role;
+import com.bances.agua_deliciosa.service.core.RoleService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import com.bances.agua_deliciosa.util.Routes;
-import com.bances.agua_deliciosa.dto.admin.RoleDTO;
-import com.bances.agua_deliciosa.service.auth.SecurityService;
-import com.bances.agua_deliciosa.service.core.RoleService;
-
-import jakarta.validation.Valid;
-
 @Controller
-@RequestMapping(Routes.Admin.ROLES)
-public class RoleController extends AdminController {
-    
+@RequestMapping("/admin/roles")
+@RequiredArgsConstructor
+public class RoleController {
     private final RoleService roleService;
-    
-    public RoleController(SecurityService securityService, RoleService roleService) {
-        super(securityService);
-        this.roleService = roleService;
+
+    protected String view(String viewName) {
+        return "admin/roles/" + viewName;
+    }
+
+    protected String redirect(String path) {
+        return "redirect:" + path;
+    }
+
+    protected void addSuccessMessage(RedirectAttributes redirectAttributes, String message) {
+        redirectAttributes.addFlashAttribute("successMessage", message);
+    }
+
+    protected void addErrorMessage(RedirectAttributes redirectAttributes, String message) {
+        redirectAttributes.addFlashAttribute("errorMessage", message);
     }
 
     @GetMapping
     public String index(Model model) {
-        setupCommonAttributes(model, "roles");
-        model.addAttribute("title", "Gestión de Roles");
-        model.addAttribute("roles", roleService.listAll());
-        return view("roles/index");
+        model.addAttribute("roles", roleService.findAll());
+        return view("index");
     }
 
     @GetMapping("/create")
     public String create(Model model) {
-        setupCommonAttributes(model, "roles");
-        model.addAttribute("title", "Nuevo Rol");
-        model.addAttribute("role", new RoleDTO());
-        return view("roles/create");
+        model.addAttribute("role", new Role());
+        return view("form");
     }
 
-    @PostMapping("/create")
+    @PostMapping
     public String store(
-        @Valid @ModelAttribute("role") RoleDTO dto,
-        RedirectAttributes redirectAttributes
+            @RequestParam String name,
+            @RequestParam String description,
+            RedirectAttributes redirectAttributes
     ) {
         try {
-            roleService.create(dto);
+            Role role = new Role();
+            role.setName(name);
+            role.setDescription(description);
+            roleService.save(role);
             addSuccessMessage(redirectAttributes, "Rol creado exitosamente");
+            return redirect("/admin/roles");
         } catch (Exception e) {
-            addErrorMessage(redirectAttributes, "Error al crear el rol: " + e.getMessage());
-            return redirect("create");
+            addErrorMessage(redirectAttributes, e.getMessage());
+            return redirect("/admin/roles/create");
         }
-        return redirect("");
     }
 
     @GetMapping("/{id}/edit")
     public String edit(@PathVariable Long id, Model model) {
-        setupCommonAttributes(model, "roles");
-        model.addAttribute("title", "Editar Rol");
-        model.addAttribute("role", roleService.getById(id));
-        return view("roles/edit");
+        Role role = roleService.findById(id)
+                .orElseThrow(() -> new RuntimeException("Role not found"));
+        model.addAttribute("role", role);
+        return "admin/roles/edit";
     }
 
-    @PostMapping("/{id}/update")
+    @PostMapping("/{id}")
     public String update(
-        @PathVariable Long id,
-        @Valid @ModelAttribute("role") RoleDTO dto,
-        RedirectAttributes redirectAttributes
+            @PathVariable Long id,
+            @RequestParam String name,
+            @RequestParam String description,
+            RedirectAttributes redirectAttributes
     ) {
         try {
-            roleService.update(id, dto);
-            addSuccessMessage(redirectAttributes, "Rol actualizado exitosamente");
+            Role role = roleService.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Role not found"));
+            role.setName(name);
+            role.setDescription(description);
+            
+            roleService.save(role);
+            addSuccessMessage(redirectAttributes, "Role updated successfully");
+            return "redirect:/admin/roles";
         } catch (Exception e) {
-            addErrorMessage(redirectAttributes, "Error al actualizar el rol: " + e.getMessage());
-            return redirect(id + "/edit");
+            addErrorMessage(redirectAttributes, "Error updating role: " + e.getMessage());
+            return "redirect:/admin/roles/" + id + "/edit";
         }
-        return redirect("");
     }
 
-    @PostMapping("/{id}/delete")
-    public String delete(
-        @PathVariable Long id,
-        RedirectAttributes redirectAttributes
+    @DeleteMapping("/{id}")
+    public String destroy(
+            @PathVariable Long id,
+            RedirectAttributes redirectAttributes
     ) {
         try {
-            roleService.delete(id);
+            roleService.deleteById(id);
             addSuccessMessage(redirectAttributes, "Rol eliminado exitosamente");
         } catch (Exception e) {
-            addErrorMessage(redirectAttributes, "Error al eliminar el rol: " + e.getMessage());
+            addErrorMessage(redirectAttributes, e.getMessage());
         }
-        return redirect("");
+        return redirect("/admin/roles");
     }
 }

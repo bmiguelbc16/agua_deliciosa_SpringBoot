@@ -1,60 +1,122 @@
 package com.bances.agua_deliciosa.repository;
 
-import java.math.BigDecimal;
+import com.bances.agua_deliciosa.model.Order;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Repository;
+
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
-import org.springframework.stereotype.Repository;
-
-import com.bances.agua_deliciosa.model.Order;
-import com.bances.agua_deliciosa.model.OrderStatus;
-
 @Repository
-public class OrderRepository {
+public class OrderRepository implements BaseRepository<Order> {
+    private final JdbcTemplate jdbcTemplate;
 
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
+    public OrderRepository(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
+    }
 
-    private final RowMapper<Order> orderMapper = (ResultSet rs, int rowNum) -> {
+    @Override
+    public Order save(Order order) {
+        if (order.getId() == null) {
+            String sql = """
+                INSERT INTO orders (customer_id, orderable_type, orderable_id, 
+                delivery_date, delivery_address) 
+                VALUES (?, ?, ?, ?, ?)
+            """;
+            jdbcTemplate.update(sql,
+                order.getCustomerId(),
+                order.getOrderableType(),
+                order.getOrderableId(),
+                order.getDeliveryDate(),
+                order.getDeliveryAddress()
+            );
+        } else {
+            String sql = """
+                UPDATE orders SET customer_id = ?, orderable_type = ?, 
+                orderable_id = ?, delivery_date = ?, delivery_address = ? 
+                WHERE id = ?
+            """;
+            jdbcTemplate.update(sql,
+                order.getCustomerId(),
+                order.getOrderableType(),
+                order.getOrderableId(),
+                order.getDeliveryDate(),
+                order.getDeliveryAddress(),
+                order.getId()
+            );
+        }
+        return order;
+    }
+
+    @Override
+    public Optional<Order> findById(Long id) {
+        String sql = "SELECT * FROM orders WHERE id = ?";
+        try {
+            Order order = jdbcTemplate.queryForObject(sql, this::mapRowToOrder, id);
+            return Optional.ofNullable(order);
+        } catch (Exception e) {
+            return Optional.empty();
+        }
+    }
+
+    @Override
+    public List<Order> findAll() {
+        String sql = "SELECT * FROM orders";
+        return jdbcTemplate.query(sql, this::mapRowToOrder);
+    }
+
+    @Override
+    public void deleteById(Long id) {
+        String sql = "DELETE FROM orders WHERE id = ?";
+        jdbcTemplate.update(sql, id);
+    }
+
+    @Override
+    public boolean existsById(Long id) {
+        String sql = "SELECT COUNT(*) FROM orders WHERE id = ?";
+        Integer count = jdbcTemplate.queryForObject(sql, Integer.class, id);
+        return count != null && count > 0;
+    }
+
+    @Override
+    public long count() {
+        String sql = "SELECT COUNT(*) FROM orders";
+        Long count = jdbcTemplate.queryForObject(sql, Long.class);
+        return count != null ? count : 0;
+    }
+
+    private Order mapRowToOrder(ResultSet rs, int rowNum) throws SQLException {
         Order order = new Order();
         order.setId(rs.getLong("id"));
-        order.setCode(rs.getString("code"));
-        order.setStatus(OrderStatus.valueOf(rs.getString("status")));
-        order.setTotal(rs.getBigDecimal("total"));
-        order.setActive(rs.getBoolean("active"));
+        order.setCustomerId(rs.getLong("customer_id"));
+        order.setOrderableType(rs.getString("orderable_type"));
+        order.setOrderableId(rs.getLong("orderable_id"));
+        order.setDeliveryAddress(rs.getString("delivery_address"));
+        order.setDeliveryDate(rs.getDate("delivery_date").toLocalDate());
+        order.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
+        order.setUpdatedAt(rs.getTimestamp("updated_at").toLocalDateTime());
         return order;
-    };
-
-    public Optional<Order> findById(Long id) {
-        String sql = "SELECT * FROM orders WHERE id = ? AND active = true";
-        List<Order> orders = jdbcTemplate.query(sql, orderMapper, id);
-        return orders.isEmpty() ? Optional.empty() : Optional.of(orders.get(0));
     }
 
-    public List<Order> findAll() {
-        String sql = "SELECT * FROM orders WHERE active = true";
-        return jdbcTemplate.query(sql, orderMapper);
+    public List<Order> findByCustomerId(Long customerId) {
+        String sql = "SELECT * FROM orders WHERE customer_id = ?";
+        return jdbcTemplate.query(sql, this::mapRowToOrder, customerId);
     }
 
-    public long count() {
-        String sql = "SELECT COUNT(*) FROM orders WHERE active = true";
-        Long count = jdbcTemplate.queryForObject(sql, Long.class);
-        return count != null ? count : 0L;
+    public List<Order> findByDeliveryEmployeeId(Long employeeId) {
+        String sql = """
+            SELECT o.* FROM orders o 
+            LEFT JOIN store_orders so ON o.orderable_id = so.id AND o.orderable_type = 'StoreOrder'
+            LEFT JOIN web_orders wo ON o.orderable_id = wo.id AND o.orderable_type = 'WebOrder'
+            WHERE so.delivery_employee_id = ? OR wo.delivery_employee_id = ?
+        """;
+        return jdbcTemplate.query(sql, this::mapRowToOrder, employeeId, employeeId);
     }
 
-    public long countByStatus(OrderStatus status) {
-        String sql = "SELECT COUNT(*) FROM orders WHERE status = ? AND active = true";
-        Long count = jdbcTemplate.queryForObject(sql, Long.class, status.name());
-        return count != null ? count : 0L;
-    }
-
-    public BigDecimal calculateTotalSales() {
-        String sql = "SELECT COALESCE(SUM(total), 0) FROM orders WHERE status = ? AND active = true";
-        BigDecimal total = jdbcTemplate.queryForObject(sql, BigDecimal.class, OrderStatus.COMPLETED.name());
-        return total != null ? total : BigDecimal.ZERO;
+    public List<Order> findTopByOrderByCreatedAtDesc(int limit) {
+        String sql = "SELECT * FROM orders ORDER BY created_at DESC LIMIT ?";
+        return jdbcTemplate.query(sql, this::mapRowToOrder, limit);
     }
 }

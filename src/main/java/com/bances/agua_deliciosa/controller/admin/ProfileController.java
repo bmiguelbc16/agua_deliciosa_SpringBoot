@@ -1,47 +1,73 @@
 package com.bances.agua_deliciosa.controller.admin;
 
+import com.bances.agua_deliciosa.model.User;
+import com.bances.agua_deliciosa.service.auth.SecurityService;
+import com.bances.agua_deliciosa.service.core.UserService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import com.bances.agua_deliciosa.util.Routes;
-import com.bances.agua_deliciosa.dto.admin.ProfileDTO;
-import com.bances.agua_deliciosa.service.auth.SecurityService;
-import com.bances.agua_deliciosa.service.core.UserService;
-
-import jakarta.validation.Valid;
-
 @Controller
-@RequestMapping(Routes.Admin.PROFILE)
-public class ProfileController extends AdminController {
-    
+@RequestMapping("/admin/profile")
+@RequiredArgsConstructor
+public class ProfileController {
+    private final SecurityService securityService;
     private final UserService userService;
-    
-    public ProfileController(SecurityService securityService, UserService userService) {
-        super(securityService);
-        this.userService = userService;
+
+    protected String view(String viewName) {
+        return "admin/profile/" + viewName;
+    }
+
+    protected String redirect(String path) {
+        return "redirect:" + path;
+    }
+
+    protected void addSuccessMessage(RedirectAttributes redirectAttributes, String message) {
+        redirectAttributes.addFlashAttribute("successMessage", message);
+    }
+
+    protected void addErrorMessage(RedirectAttributes redirectAttributes, String message) {
+        redirectAttributes.addFlashAttribute("errorMessage", message);
     }
 
     @GetMapping
-    public String index(Model model) {
-        setupCommonAttributes(model, "profile");
-        model.addAttribute("title", "Mi Perfil");
-        model.addAttribute("user", userService.getCurrentUserProfile());
-        return view("profile/index");
+    public String show(Model model) {
+        User currentUser = securityService.getUser();
+        model.addAttribute("user", currentUser);
+        return view("show");
     }
 
-    @PostMapping("/update")
+    @GetMapping("/edit")
+    public String edit(Model model) {
+        User currentUser = securityService.getUser();
+        model.addAttribute("user", currentUser);
+        return view("edit");
+    }
+
+    @PostMapping
     public String update(
-        @Valid @ModelAttribute("user") ProfileDTO dto,
-        RedirectAttributes redirectAttributes
+            @RequestParam String name,
+            @RequestParam String email,
+            @RequestParam(required = false) String password,
+            RedirectAttributes redirectAttributes
     ) {
         try {
-            userService.updateProfile(dto);
+            User currentUser = securityService.getUser();
+            currentUser.setName(name);
+            currentUser.setEmail(email);
+            
+            if (password != null && !password.isEmpty()) {
+                userService.updatePassword(currentUser, password);
+            }
+            
+            userService.save(currentUser);
             addSuccessMessage(redirectAttributes, "Perfil actualizado exitosamente");
+            return redirect("/admin/profile");
         } catch (Exception e) {
-            addErrorMessage(redirectAttributes, "Error al actualizar el perfil: " + e.getMessage());
+            addErrorMessage(redirectAttributes, e.getMessage());
+            return redirect("/admin/profile/edit");
         }
-        return redirect("");
     }
 }

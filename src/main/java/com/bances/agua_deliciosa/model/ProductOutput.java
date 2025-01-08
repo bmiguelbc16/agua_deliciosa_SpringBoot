@@ -1,19 +1,41 @@
 package com.bances.agua_deliciosa.model;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.math.BigDecimal;
 
 public class ProductOutput extends BaseModel {
-    private Employee employee;
+    private Long employeeId;
+    private Long orderId;
+    private MovementType movementType;
     private String description;
-    private List<ProductOutputDetail> details = new ArrayList<>();
+    private BigDecimal totalAmount;
 
-    public Employee getEmployee() {
-        return employee;
+    public ProductOutput() {
+        super();
+        this.totalAmount = BigDecimal.ZERO;
     }
 
-    public void setEmployee(Employee employee) {
-        this.employee = employee;
+    public Long getEmployeeId() {
+        return employeeId;
+    }
+
+    public void setEmployeeId(Long employeeId) {
+        this.employeeId = employeeId;
+    }
+
+    public Long getOrderId() {
+        return orderId;
+    }
+
+    public void setOrderId(Long orderId) {
+        this.orderId = orderId;
+    }
+
+    public MovementType getMovementType() {
+        return movementType;
+    }
+
+    public void setMovementType(MovementType movementType) {
+        this.movementType = movementType;
     }
 
     public String getDescription() {
@@ -24,18 +46,31 @@ public class ProductOutput extends BaseModel {
         this.description = description;
     }
 
-    public List<ProductOutputDetail> getDetails() {
-        return new ArrayList<>(details);
+    public BigDecimal getTotalAmount() {
+        return totalAmount;
     }
 
-    public void setDetails(List<ProductOutputDetail> details) {
-        this.details = details != null ? new ArrayList<>(details) : new ArrayList<>();
+    public void setTotalAmount(BigDecimal totalAmount) {
+        this.totalAmount = totalAmount;
     }
 
-    public void addDetail(ProductOutputDetail detail) {
-        if (detail != null) {
-            details.add(detail);
-            detail.setOutput(this);
-        }
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof ProductOutput)) return false;
+        ProductOutput that = (ProductOutput) o;
+        return getId() != null && getId().equals(that.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return getId() != null ? getId().hashCode() : 0;
+    }
+
+    @Override
+    public String toString() {
+        return "ProductOutput [id=" + getId() + ", employeeId=" + employeeId + 
+               ", orderId=" + orderId + ", movementType=" + movementType + 
+               ", description=" + description + ", totalAmount=" + totalAmount + "]";
     }
 }

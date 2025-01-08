@@ -1,26 +1,26 @@
 package com.bances.agua_deliciosa.security;
 
-import java.util.Collection;
-import java.util.Collections;
-
+import com.bances.agua_deliciosa.model.User;
+import com.bances.agua_deliciosa.service.auth.UserRoleService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import com.bances.agua_deliciosa.model.Role;
-import com.bances.agua_deliciosa.model.User;
+import java.util.Collection;
+import java.util.stream.Collectors;
 
+@RequiredArgsConstructor
 public class UserDetailsAdapter implements UserDetails {
     private final User user;
-
-    public UserDetailsAdapter(User user) {
-        this.user = user;
-    }
+    private final UserRoleService userRoleService;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        Role role = user.getRoles().isEmpty() ? null : user.getRoles().iterator().next();
-        return Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + (role != null ? role.getName() : "USER")));
+        return userRoleService.getRoles(user.getId())
+                .stream()
+                .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -56,4 +56,4 @@ public class UserDetailsAdapter implements UserDetails {
     public User getUser() {
         return user;
     }
-} 
+}

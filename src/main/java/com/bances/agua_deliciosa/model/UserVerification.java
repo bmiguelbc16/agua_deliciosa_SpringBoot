@@ -3,21 +3,23 @@ package com.bances.agua_deliciosa.model;
 import java.time.LocalDateTime;
 
 public class UserVerification extends BaseModel {
-    private User user;
+    private Long userId;
     private String token;
     private String verificationType;
     private LocalDateTime expiryDate;
     private boolean verified;
 
-    public User getUser() {
-        return user;
+    public UserVerification() {
+        super();
+        this.verified = false;
     }
 
-    public void setUser(User user) {
-        this.user = user;
-        if (user != null && !user.getVerifications().contains(this)) {
-            user.addVerification(this);
-        }
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
     }
 
     public String getToken() {
@@ -52,15 +54,23 @@ public class UserVerification extends BaseModel {
         this.verified = verified;
     }
 
-    public boolean isExpired() {
-        return expiryDate != null && LocalDateTime.now().isAfter(expiryDate);
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof UserVerification)) return false;
+        UserVerification that = (UserVerification) o;
+        return token != null && token.equals(that.token);
     }
 
-    public boolean isValid() {
-        return !isExpired() && !verified;
+    @Override
+    public int hashCode() {
+        return token != null ? token.hashCode() : 0;
     }
 
-    public boolean canBeVerified() {
-        return !isExpired() && !verified;
+    @Override
+    public String toString() {
+        return "UserVerification [id=" + getId() + ", userId=" + userId + 
+               ", token=" + token + ", verificationType=" + verificationType + 
+               ", expiryDate=" + expiryDate + ", verified=" + verified + "]";
     }
 }

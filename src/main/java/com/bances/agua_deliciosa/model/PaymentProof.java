@@ -4,36 +4,38 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public class PaymentProof extends BaseModel {
-    private Order order;
-    private Employee verifiedBy;
-    private String proofPath;
+    private Long orderId;
+    private PaymentType paymentType;
     private BigDecimal amount;
-    private LocalDateTime verifiedAt;
-    private String notes;
-    private boolean verified;
+    private byte[] proofImage;
+    private String imageName;
+    private String imageType;
+    private VerificationStatus verificationStatus;
+    private Long verifiedByEmployeeId;
+    private LocalDateTime verificationDate;
+    private String verificationNotes;
+    private Long createdByEmployeeId;
 
-    public Order getOrder() {
-        return order;
+    public PaymentProof() {
+        super();
+        this.verificationStatus = VerificationStatus.PENDING;
+        this.amount = BigDecimal.ZERO;
     }
 
-    public void setOrder(Order order) {
-        this.order = order;
+    public Long getOrderId() {
+        return orderId;
     }
 
-    public Employee getVerifiedBy() {
-        return verifiedBy;
+    public void setOrderId(Long orderId) {
+        this.orderId = orderId;
     }
 
-    public void setVerifiedBy(Employee verifiedBy) {
-        this.verifiedBy = verifiedBy;
+    public PaymentType getPaymentType() {
+        return paymentType;
     }
 
-    public String getProofPath() {
-        return proofPath;
-    }
-
-    public void setProofPath(String proofPath) {
-        this.proofPath = proofPath;
+    public void setPaymentType(PaymentType paymentType) {
+        this.paymentType = paymentType;
     }
 
     public BigDecimal getAmount() {
@@ -41,33 +43,97 @@ public class PaymentProof extends BaseModel {
     }
 
     public void setAmount(BigDecimal amount) {
+        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Amount must be greater than zero");
+        }
         this.amount = amount;
     }
 
-    public LocalDateTime getVerifiedAt() {
-        return verifiedAt;
+    public byte[] getProofImage() {
+        return proofImage;
     }
 
-    public void setVerifiedAt(LocalDateTime verifiedAt) {
-        this.verifiedAt = verifiedAt;
+    public void setProofImage(byte[] proofImage) {
+        this.proofImage = proofImage;
     }
 
-    public String getNotes() {
-        return notes;
+    public String getImageName() {
+        return imageName;
     }
 
-    public void setNotes(String notes) {
-        this.notes = notes;
+    public void setImageName(String imageName) {
+        this.imageName = imageName;
     }
 
-    public boolean isVerified() {
-        return verified;
+    public String getImageType() {
+        return imageType;
     }
 
-    public void setVerified(boolean verified) {
-        this.verified = verified;
-        if (verified && verifiedAt == null) {
-            this.verifiedAt = LocalDateTime.now();
-        }
+    public void setImageType(String imageType) {
+        this.imageType = imageType;
+    }
+
+    public VerificationStatus getVerificationStatus() {
+        return verificationStatus;
+    }
+
+    public void setVerificationStatus(VerificationStatus verificationStatus) {
+        this.verificationStatus = verificationStatus;
+    }
+
+    public Long getVerifiedByEmployeeId() {
+        return verifiedByEmployeeId;
+    }
+
+    public void setVerifiedByEmployeeId(Long verifiedByEmployeeId) {
+        this.verifiedByEmployeeId = verifiedByEmployeeId;
+    }
+
+    public LocalDateTime getVerificationDate() {
+        return verificationDate;
+    }
+
+    public void setVerificationDate(LocalDateTime verificationDate) {
+        this.verificationDate = verificationDate;
+    }
+
+    public String getVerificationNotes() {
+        return verificationNotes;
+    }
+
+    public void setVerificationNotes(String verificationNotes) {
+        this.verificationNotes = verificationNotes;
+    }
+
+    public Long getCreatedByEmployeeId() {
+        return createdByEmployeeId;
+    }
+
+    public void setCreatedByEmployeeId(Long createdByEmployeeId) {
+        this.createdByEmployeeId = createdByEmployeeId;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof PaymentProof)) return false;
+        PaymentProof that = (PaymentProof) o;
+        return getId() != null && getId().equals(that.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return getId() != null ? getId().hashCode() : 0;
+    }
+
+    @Override
+    public String toString() {
+        return "PaymentProof [id=" + getId() + ", orderId=" + orderId + 
+               ", paymentType=" + paymentType + ", amount=" + amount + 
+               ", imageName=" + imageName + ", imageType=" + imageType + 
+               ", verificationStatus=" + verificationStatus + 
+               ", verifiedByEmployeeId=" + verifiedByEmployeeId + 
+               ", verificationDate=" + verificationDate + 
+               ", createdByEmployeeId=" + createdByEmployeeId + "]";
     }
 }

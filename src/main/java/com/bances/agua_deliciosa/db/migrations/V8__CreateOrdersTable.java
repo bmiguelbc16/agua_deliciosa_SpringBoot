@@ -29,7 +29,7 @@ public class V8__CreateOrdersTable implements JavaMigration {
     public void migrate(Context context) throws Exception {
         try (var statement = context.getConnection().createStatement()) {
             // Tabla base de pedidos
-            statement.execute("""
+            statement.execute ("""
                 CREATE TABLE orders (
                     id BIGINT NOT NULL AUTO_INCREMENT,
                     customer_id BIGINT NOT NULL,
@@ -44,12 +44,12 @@ public class V8__CreateOrdersTable implements JavaMigration {
                     INDEX idx_orderable (orderable_type, orderable_id),
                     INDEX idx_delivery_date (delivery_date),
                     CONSTRAINT fk_orders_customer 
-                        FOREIGN KEY (customer_id) REFERENCES customers(id)
+                        FOREIGN KEY (customer_id) REFERENCES clients(id)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
             """);
 
             // Tabla para pedidos en tienda (2 empleados: vendedor y repartidor)
-            statement.execute("""
+            statement.execute ("""
                 CREATE TABLE store_orders (
                     id BIGINT NOT NULL AUTO_INCREMENT,
                     seller_employee_id BIGINT NOT NULL,
@@ -57,24 +57,23 @@ public class V8__CreateOrdersTable implements JavaMigration {
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                     PRIMARY KEY (id),
-                    INDEX idx_seller (seller_employee_id),
-                    INDEX idx_delivery (delivery_employee_id),
+                    INDEX idx_seller_employee (seller_employee_id),
+                    INDEX idx_delivery_employee (delivery_employee_id),
                     CONSTRAINT fk_store_orders_seller
                         FOREIGN KEY (seller_employee_id) REFERENCES employees(id),
                     CONSTRAINT fk_store_orders_delivery
                         FOREIGN KEY (delivery_employee_id) REFERENCES employees(id)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
             """);
-
             // Tabla para pedidos web (solo empleado repartidor)
-            statement.execute("""
+            statement.execute ("""
                 CREATE TABLE web_orders (
                     id BIGINT NOT NULL AUTO_INCREMENT,
                     delivery_employee_id BIGINT NOT NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                     PRIMARY KEY (id),
-                    INDEX idx_delivery (delivery_employee_id),
+                    INDEX idx_delivery_employee (delivery_employee_id),
                     CONSTRAINT fk_web_orders_delivery
                         FOREIGN KEY (delivery_employee_id) REFERENCES employees(id)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
@@ -95,6 +94,6 @@ public class V8__CreateOrdersTable implements JavaMigration {
 
     @Override
     public String getDescription() { 
-        return "Create orders tables";
+        return "Create Orders Tables";
     }
 }

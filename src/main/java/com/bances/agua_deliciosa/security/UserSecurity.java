@@ -1,60 +1,41 @@
 package com.bances.agua_deliciosa.security;
 
-import java.util.Collection;
-import java.util.Collections;
-
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
-
-import com.bances.agua_deliciosa.model.Role;
 import com.bances.agua_deliciosa.model.User;
+import com.bances.agua_deliciosa.service.auth.SecurityService;
+import com.bances.agua_deliciosa.service.core.UserService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.stereotype.Component;
 
-public class UserSecurity implements UserDetails {
+import java.io.Serializable;
+import java.util.Optional;
+
+@Component
+@RequiredArgsConstructor
+public class UserSecurity implements Serializable {
+    private static final long serialVersionUID = 1L;
     
-    private final User user;
+    private transient final SecurityService securityService;
+    private transient final UserService userService;
 
-    public UserSecurity(User user) {
-        this.user = user;
+    public boolean isOwner(Authentication authentication, Long userId) {
+        return getCurrentUser(authentication)
+                .map(user -> user.getId().equals(userId))
+                .orElse(false);
     }
 
-    @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        Role role = user.getRoles().isEmpty() ? null : user.getRoles().iterator().next();
-        return Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + (role != null ? role.getName() : "USER")));
+    public boolean hasRole(Authentication authentication, String role) {
+        return getCurrentUser(authentication)
+                .map(user -> securityService.hasRole(user.getId(), role))
+                .orElse(false);
     }
 
-    @Override
-    public String getPassword() {
-        return user.getPassword();
-    }
+    private Optional<User> getCurrentUser(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return Optional.empty();
+        }
 
-    @Override
-    public String getUsername() {
-        return user.getEmail();
-    }
-
-    @Override
-    public boolean isAccountNonExpired() {
-        return true;
-    }
-
-    @Override
-    public boolean isAccountNonLocked() {
-        return true;
-    }
-
-    @Override
-    public boolean isCredentialsNonExpired() {
-        return true;
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return user.isActive();
-    }
-
-    public User getUser() {
-        return user;
+        String email = authentication.getName();
+        return userService.findByEmail(email);
     }
 }

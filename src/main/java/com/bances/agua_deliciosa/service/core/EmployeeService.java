@@ -1,100 +1,89 @@
 package com.bances.agua_deliciosa.service.core;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import com.bances.agua_deliciosa.exception.ResourceNotFoundException;
+import com.bances.agua_deliciosa.model.Employee;
+import com.bances.agua_deliciosa.model.User;
+import com.bances.agua_deliciosa.repository.EmployeeRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.bances.agua_deliciosa.model.Employee;
-import com.bances.agua_deliciosa.model.User;
-import com.bances.agua_deliciosa.repository.EmployeeRepository;
-import com.bances.agua_deliciosa.repository.UserRepository;
-
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
 public class EmployeeService {
-
-    @Autowired
-    private EmployeeRepository employeeRepository;
-
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private UserService userService;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-
-    @Transactional(readOnly = true)
-    public Employee findById(Long id) {
-        return employeeRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Employee not found with id: " + id));
-    }
+    private final EmployeeRepository employeeRepository;
+    private final UserService userService;
+    private final RoleService roleService;
+    private final PasswordEncoder passwordEncoder;
 
     @Transactional(readOnly = true)
     public List<Employee> findAll() {
         return employeeRepository.findAll();
     }
 
-    @Transactional
-    public Employee save(Employee employee, User user) {
-        validateNewEmployee(employee);
-        
-        // Encriptar contraseña y guardar usuario
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-        User savedUser = userRepository.save(user);
-        
-        // Asignar rol de empleado
-        userService.assignRole(savedUser, "ROLE_EMPLOYEE");
-        
-        // Guardar empleado
-        Employee savedEmployee = employeeRepository.save(employee);
-        
-        return savedEmployee;
+    @Transactional(readOnly = true)
+    public Optional<Employee> findById(Long id) {
+        return employeeRepository.findById(id);
     }
 
     @Transactional
-    public Employee update(Employee employee) {
-        Employee existingEmployee = findById(employee.getId());
-        
-        if (!existingEmployee.getEmail().equals(employee.getEmail())) {
-            validateEmail(employee.getEmail());
+    public Employee save(Employee employee, User user) {
+        if (employeeRepository.existsByDocumentNumber(employee.getDocumentNumber())) {
+            throw new RuntimeException("Document number already exists");
         }
+
+        employee.setActive(true);
+        employee.setCreatedAt(LocalDateTime.now());
+        employee.setUpdatedAt(LocalDateTime.now());
+
+        user.setUserableType("Employee");
+        user.setUserableId(employee.getId());
+        user.setRoleId(roleService.findEmployeeRole().getId());
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
         
-        if (!existingEmployee.getDocumentNumber().equals(employee.getDocumentNumber())) {
-            validateDocumentNumber(employee.getDocumentNumber());
-        }
-        
+        user = userService.save(user);
+        employee.setUser(user);
+
         return employeeRepository.save(employee);
     }
 
     @Transactional
-    public void delete(Long id) {
-        Employee employee = findById(id);
-        employeeRepository.delete(id);
-        
-        // Si tiene usuario asociado, desactivarlo también
-        if (employee.getUser() != null) {
-            userRepository.delete(employee.getUser().getId());
+    public Employee update(Long id, Employee updatedEmployee) {
+        Employee employee = findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Employee not found"));
+
+        if (!employee.getDocumentNumber().equals(updatedEmployee.getDocumentNumber()) &&
+            employeeRepository.existsByDocumentNumberAndIdNot(updatedEmployee.getDocumentNumber(), id)) {
+            throw new RuntimeException("Document number already exists");
         }
+
+        employee.setUser(updatedEmployee.getUser());
+        employee.setUpdatedAt(LocalDateTime.now());
+
+        return employeeRepository.save(employee);
     }
 
-    private void validateNewEmployee(Employee employee) {
-        validateEmail(employee.getEmail());
-        validateDocumentNumber(employee.getDocumentNumber());
+    @Transactional
+    public void deleteById(Long id) {
+        Optional<Employee> employee = findById(id);
+        if (employee.isPresent() && employee.get().getUser() != null) {
+            userService.deleteById(employee.get().getUser().getId());
+        }
+        employeeRepository.deleteById(id);
     }
 
-    private void validateEmail(String email) {
-        if (employeeRepository.existsByEmail(email)) {
-            throw new RuntimeException("Email already exists: " + email);
-        }
+    @Transactional(readOnly = true)
+    public boolean existsByDocumentNumber(String documentNumber) {
+        return employeeRepository.existsByDocumentNumber(documentNumber);
     }
 
-    private void validateDocumentNumber(String documentNumber) {
-        if (employeeRepository.existsByDocumentNumber(documentNumber)) {
-            throw new RuntimeException("Document number already exists: " + documentNumber);
-        }
+    @Transactional(readOnly = true)
+    public boolean existsByDocumentNumberAndIdNot(String documentNumber, Long id) {
+        return employeeRepository.existsByDocumentNumberAndIdNot(documentNumber, id);
     }
 }

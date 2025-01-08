@@ -1,23 +1,44 @@
 package com.bances.agua_deliciosa.controller.auth;
 
-import com.bances.agua_deliciosa.controller.base.BaseController;
 import com.bances.agua_deliciosa.service.auth.SecurityService;
-import org.springframework.ui.Model;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import lombok.RequiredArgsConstructor;
-
+@Controller
+@RequestMapping("/auth")
 @RequiredArgsConstructor
-public abstract class AuthController extends BaseController {
-    
+public class AuthController {
     protected final SecurityService securityService;
-    
+
+    protected void addSuccessMessage(RedirectAttributes redirectAttributes, String message) {
+        redirectAttributes.addFlashAttribute("successMessage", message);
+    }
+
+    protected void addErrorMessage(RedirectAttributes redirectAttributes, String message) {
+        redirectAttributes.addFlashAttribute("errorMessage", message);
+    }
+
+    protected String redirect(String path) {
+        return "redirect:" + path;
+    }
+
+    protected String view(String viewName) {
+        return "auth/" + viewName;
+    }
+
     protected void setupCommonAttributes(Model model) {
         Authentication auth = securityService.getCurrentAuthentication();
-        model.addAttribute("currentUser", securityService.getUser());
-        model.addAttribute("isAuthenticated", auth != null && auth.isAuthenticated());
-        model.addAttribute("userRoles", securityService.getCurrentUserRoles());
+        if (auth != null && auth.isAuthenticated()) {
+            model.addAttribute("currentUser", securityService.getUser());
+            model.addAttribute("roles", auth.getAuthorities());
+        }
     }
 
     protected String handleAuthError(Exception e, RedirectAttributes redirectAttributes, String defaultRedirect) {
@@ -26,32 +47,43 @@ public abstract class AuthController extends BaseController {
             errorMessage = "Ha ocurrido un error de autenticación";
         }
         addErrorMessage(redirectAttributes, errorMessage);
-        logAction("AUTH_ERROR", errorMessage);
         return redirect(defaultRedirect);
     }
 
-    protected boolean isEmailVerified(String email) {
-        return securityService.isEmailVerified(email);
+    @GetMapping("/login")
+    public String showLoginForm(Model model) {
+        if (securityService.isAuthenticated()) {
+            return redirect("/");
+        }
+        setupCommonAttributes(model);
+        return view("login");
     }
 
-    protected boolean isPasswordValid(String password) {
-        return password != null && 
-               password.length() >= 8 && 
-               password.matches(".*[A-Z].*") && 
-               password.matches(".*[a-z].*") && 
-               password.matches(".*\\d.*");
-    }
-
-    protected void validatePassword(String password, RedirectAttributes redirectAttributes) {
-        if (!isPasswordValid(password)) {
-            throw new IllegalArgumentException(
-                "La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula y un número"
-            );
+    @PostMapping("/login")
+    public String login(
+            @RequestParam String email, 
+            @RequestParam String password, 
+            RedirectAttributes redirectAttributes) {
+        try {
+            Authentication auth = securityService.authenticate(email, password);
+            if (auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
+                return redirect("/admin/dashboard");
+            } else {
+                return redirect("/dashboard");
+            }
+        } catch (Exception e) {
+            return handleAuthError(e, redirectAttributes, "/auth/login");
         }
     }
 
-    @Override
-    protected String getViewPrefix() {
-        return "auth";
+    @GetMapping("/logout")
+    public String logout(RedirectAttributes redirectAttributes) {
+        try {
+            // El logout real lo maneja Spring Security
+            addSuccessMessage(redirectAttributes, "Has cerrado sesión exitosamente");
+            return redirect("/auth/login");
+        } catch (Exception e) {
+            return handleAuthError(e, redirectAttributes, "/");
+        }
     }
 }

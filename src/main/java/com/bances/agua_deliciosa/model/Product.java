@@ -1,8 +1,6 @@
 package com.bances.agua_deliciosa.model;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
 
 public class Product extends BaseModel {
     private String name;
@@ -10,9 +8,13 @@ public class Product extends BaseModel {
     private BigDecimal salePrice;
     private boolean forSale;
     private int stock;
-    private List<OrderDetail> orderDetails = new ArrayList<>();
-    private List<ProductOutputDetail> outputDetails = new ArrayList<>();
-    private List<ProductEntryDetail> entryDetails = new ArrayList<>();
+
+    public Product() {
+        super();
+        this.salePrice = BigDecimal.ZERO;
+        this.forSale = false;
+        this.stock = 0;
+    }
 
     public String getName() {
         return name;
@@ -51,55 +53,29 @@ public class Product extends BaseModel {
     }
 
     public void setStock(int stock) {
+        if (stock < 0) {
+            throw new IllegalArgumentException("Stock cannot be negative");
+        }
         this.stock = stock;
     }
 
-    public List<OrderDetail> getOrderDetails() {
-        return new ArrayList<>(orderDetails);
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Product)) return false;
+        Product that = (Product) o;
+        return name != null && name.equals(that.name);
     }
 
-    public void setOrderDetails(List<OrderDetail> orderDetails) {
-        this.orderDetails = orderDetails != null ? new ArrayList<>(orderDetails) : new ArrayList<>();
+    @Override
+    public int hashCode() {
+        return name != null ? name.hashCode() : 0;
     }
 
-    public List<ProductOutputDetail> getOutputDetails() {
-        return new ArrayList<>(outputDetails);
-    }
-
-    public void setOutputDetails(List<ProductOutputDetail> outputDetails) {
-        this.outputDetails = outputDetails != null ? new ArrayList<>(outputDetails) : new ArrayList<>();
-    }
-
-    public List<ProductEntryDetail> getEntryDetails() {
-        return new ArrayList<>(entryDetails);
-    }
-
-    public void setEntryDetails(List<ProductEntryDetail> entryDetails) {
-        this.entryDetails = entryDetails != null ? new ArrayList<>(entryDetails) : new ArrayList<>();
-    }
-
-    public void addOrderDetail(OrderDetail detail) {
-        if (detail != null) {
-            orderDetails.add(detail);
-            detail.setProduct(this);
-        }
-    }
-
-    public void addOutputDetail(ProductOutputDetail detail) {
-        if (detail != null) {
-            outputDetails.add(detail);
-            detail.setProduct(this);
-        }
-    }
-
-    public void addEntryDetail(ProductEntryDetail detail) {
-        if (detail != null) {
-            entryDetails.add(detail);
-            detail.setProduct(this);
-        }
-    }
-
-    public void updateStock(int quantity) {
-        this.stock += quantity;
+    @Override
+    public String toString() {
+        return "Product [id=" + getId() + ", name=" + name + 
+               ", description=" + description + ", salePrice=" + salePrice + 
+               ", forSale=" + forSale + ", stock=" + stock + "]";
     }
 }

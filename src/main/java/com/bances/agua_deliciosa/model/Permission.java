@@ -1,93 +1,97 @@
 package com.bances.agua_deliciosa.model;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.time.LocalDateTime;
 
 public class Permission extends BaseModel {
     
     private String name;
     private String description;
-    private String guardName = "web";
-    private boolean active = true;
-    private Set<Role> roles = new HashSet<>();
+    private String guardName;
+    private boolean active;
+    private Long roleId;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
-    // Getters
+    public Permission() {
+        super();
+    }
+
     public String getName() {
         return name;
     }
-    
-    public String getDescription() {
-        return description;
-    }
-    
-    public String getGuardName() {
-        return guardName;
-    }
-    
-    public boolean isActive() {
-        return active;
-    }
-    
-    public Set<Role> getRoles() {
-        return new HashSet<>(roles);
-    }
-    
-    // Setters
+
     public void setName(String name) {
         this.name = name;
     }
-    
+
+    public String getDescription() {
+        return description;
+    }
+
     public void setDescription(String description) {
         this.description = description;
     }
-    
+
+    public String getGuardName() {
+        return guardName;
+    }
+
     public void setGuardName(String guardName) {
         this.guardName = guardName;
     }
-    
+
+    public boolean isActive() {
+        return active;
+    }
+
     public void setActive(boolean active) {
         this.active = active;
     }
-    
-    public void setRoles(Set<Role> roles) {
-        this.roles = roles != null ? new HashSet<>(roles) : new HashSet<>();
+
+    public Long getRoleId() {
+        return roleId;
     }
-    
-    // Métodos de utilidad
-    public void addRole(Role role) {
-        if (role != null) {
-            roles.add(role);
-            role.getPermissions().add(this);
-        }
+
+    public void setRoleId(Long roleId) {
+        this.roleId = roleId;
     }
-    
-    public void removeRole(Role role) {
-        if (role != null) {
-            roles.remove(role);
-            role.getPermissions().remove(this);
-        }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
     }
-    
-    public boolean hasRole(String roleName) {
-        return roles.stream()
-                .anyMatch(role -> role.getName().equals(roleName));
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
-    
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof Permission)) return false;
         Permission that = (Permission) o;
-        return name != null && name.equals(that.name);
+        return name != null && name.equals(that.name) && 
+               guardName != null && guardName.equals(that.guardName);
     }
-    
+
     @Override
     public int hashCode() {
-        return name != null ? name.hashCode() : 0;
+        int result = name != null ? name.hashCode() : 0;
+        result = 31 * result + (guardName != null ? guardName.hashCode() : 0);
+        return result;
     }
-    
+
     @Override
     public String toString() {
-        return "Permission(" + name + ")";
+        return "Permission [id=" + getId() + ", name=" + name + 
+               ", description=" + description + ", guardName=" + guardName + 
+               ", active=" + active + ", roleId=" + roleId + "]";
     }
 }

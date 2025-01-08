@@ -1,137 +1,93 @@
 package com.bances.agua_deliciosa.model;
 
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
+import java.time.LocalDate;
 
-public class Client extends BaseModel {
-    private String name;
-    private String lastName;
-    private String email;
-    private String phoneNumber;
-    private String address;
-    private boolean active;
+public class Client extends BaseModel{
     private User user;
-    private List<Order> orders = new ArrayList<>();
-    
-    // Getters
-    public String getName() {
-        return name;
-    }
-    
-    public String getLastName() {
-        return lastName;
-    }
-    
-    public String getEmail() {
-        return email;
-    }
-    
-    public String getPhoneNumber() {
-        return phoneNumber;
-    }
-    
-    public String getAddress() {
-        return address;
-    }
-    
-    public boolean isActive() {
-        return active;
-    }
     
     public User getUser() {
         return user;
     }
     
-    public List<Order> getOrders() {
-        return new ArrayList<>(orders);
+    public void setUser(User user) {
+        this.user = user;
     }
     
-    // Setters
-    public void setName(String name) {
-        this.name = name;
+    // Getters y setters delegados a User
+    public String getFirstName() {
+        return user != null ? user.getName() : null;
+    }
+    
+    public void setFirstName(String firstName) {
+        if (user == null) {
+            user = new User();
+        }
+        user.setName(firstName);
+    }
+    
+    public String getLastName() {
+        return user != null ? user.getLastName() : null;
     }
     
     public void setLastName(String lastName) {
-        this.lastName = lastName;
-    }
-    
-    public void setEmail(String email) {
-        this.email = email;
-    }
-    
-    public void setPhoneNumber(String phoneNumber) {
-        this.phoneNumber = phoneNumber;
-    }
-    
-    public void setAddress(String address) {
-        this.address = address;
-    }
-    
-    public void setActive(boolean active) {
-        this.active = active;
-    }
-    
-    public void setUser(User user) {
-        this.user = user;
-        if (user != null) {
-            user.setUserableType("App\\Models\\Client");
-            user.setUserableId(getId());
+        if (user == null) {
+            user = new User();
         }
+        user.setLastName(lastName);
     }
     
-    public void setOrders(List<Order> orders) {
-        this.orders = orders != null ? new ArrayList<>(orders) : new ArrayList<>();
+    public String getDocumentNumber() {
+        return user != null ? user.getDocumentNumber() : null;
     }
     
-    // Métodos de utilidad
-    public void addOrder(Order order) {
-        if (order != null) {
-            orders.add(order);
-            order.setCustomer(this);
+    public void setDocumentNumber(String documentNumber) {
+        if (user == null) {
+            user = new User();
         }
+        user.setDocumentNumber(documentNumber);
     }
     
-    public void removeOrder(Order order) {
-        if (order != null) {
-            orders.remove(order);
-            if (order.getCustomer() == this) {
-                order.setCustomer(null);
-            }
+    public String getPhone() {
+        return user != null ? user.getPhoneNumber() : null;
+    }
+    
+    public void setPhone(String phone) {
+        if (user == null) {
+            user = new User();
         }
+        user.setPhoneNumber(phone);
     }
     
-    public String getFullName() {
-        return name + " " + lastName;
+    public Gender getGender() {
+        return user != null ? user.getGender() : null;
     }
     
-    public int getTotalOrders() {
-        return orders.size();
+    public void setGender(Gender gender) {
+        if (user == null) {
+            user = new User();
+        }
+        user.setGender(gender);
     }
     
-    public List<Order> getPendingOrders() {
-        return orders.stream()
-                .filter(order -> order.getStatus() == OrderStatus.PENDING)
-                .toList();
+    public LocalDate getBirthDate() {
+        return user != null ? user.getBirthDate() : null;
+    }
+
+    public void setBirthDate(LocalDate birthDate) {
+        if (user == null) {
+            user = new User();
+        }
+        user.setBirthDate(birthDate);
     }
     
-    public List<Order> getCompletedOrders() {
-        return orders.stream()
-                .filter(order -> order.getStatus() == OrderStatus.COMPLETED)
-                .toList();
+    public Boolean isActive() {
+        return user != null ? user.isActive() : null;
     }
     
-    public BigDecimal getTotalPendingOrders() {
-        return orders.stream()
-                .filter(order -> order.getStatus() == OrderStatus.PENDING)
-                .map(Order::getTotal)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-    }
-    
-    public BigDecimal getTotalCompletedOrders() {
-        return orders.stream()
-                .filter(order -> order.getStatus() == OrderStatus.COMPLETED)
-                .map(Order::getTotal)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    public void setActive(Boolean active) {
+        if (user == null) {
+            user = new User();
+        }
+        user.setActive(active);
     }
 }

@@ -1,151 +1,116 @@
 package com.bances.agua_deliciosa.repository;
 
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
-import org.springframework.jdbc.support.GeneratedKeyHolder;
-import org.springframework.jdbc.support.KeyHolder;
-import org.springframework.stereotype.Repository;
-import org.springframework.dao.EmptyResultDataAccessException;
 import com.bances.agua_deliciosa.model.ProductOutput;
 import com.bances.agua_deliciosa.model.MovementType;
-import java.sql.PreparedStatement;
-import java.sql.Statement;
-import java.sql.Timestamp;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Repository;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 
 @Repository
-public class ProductOutputRepository {
-    
+public class ProductOutputRepository implements BaseRepository<ProductOutput> {
     private final JdbcTemplate jdbcTemplate;
-    
-    private final RowMapper<ProductOutput> productOutputMapper = (rs, rowNum) -> {
-        ProductOutput output = new ProductOutput();
-        output.setId(rs.getLong("id"));
-        output.setEmployeeId(rs.getLong("employee_id"));
-        output.setMovementType(MovementType.valueOf(rs.getString("movement_type")));
-        output.setDescription(rs.getString("description"));
-        output.setActive(rs.getBoolean("active"));
-        output.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
-        output.setUpdatedAt(rs.getTimestamp("updated_at").toLocalDateTime());
-        return output;
-    };
-    
+
     public ProductOutputRepository(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
-    
-    public List<ProductOutput> findAll() {
-        String sql = """
-            SELECT * FROM product_outputs
-            WHERE active = true
-            ORDER BY created_at DESC
+
+    @Override
+    public ProductOutput save(ProductOutput output) {
+        if (output.getId() == null) {
+            String sql = """
+                INSERT INTO product_outputs (employee_id, order_id, movement_type, 
+                description, total_amount) VALUES (?, ?, ?, ?, ?)
             """;
-        return jdbcTemplate.query(sql, productOutputMapper);
+            jdbcTemplate.update(sql,
+                output.getEmployeeId(),
+                output.getOrderId(),
+                output.getMovementType().name(),
+                output.getDescription(),
+                output.getTotalAmount()
+            );
+        } else {
+            String sql = """
+                UPDATE product_outputs SET employee_id = ?, order_id = ?, 
+                movement_type = ?, description = ?, total_amount = ? WHERE id = ?
+            """;
+            jdbcTemplate.update(sql,
+                output.getEmployeeId(),
+                output.getOrderId(),
+                output.getMovementType().name(),
+                output.getDescription(),
+                output.getTotalAmount(),
+                output.getId()
+            );
+        }
+        return output;
     }
-    
+
+    @Override
     public Optional<ProductOutput> findById(Long id) {
-        String sql = """
-            SELECT * FROM product_outputs
-            WHERE id = ? AND active = true
-            """;
+        String sql = "SELECT * FROM product_outputs WHERE id = ?";
         try {
-            ProductOutput output = jdbcTemplate.queryForObject(sql, productOutputMapper, id);
+            ProductOutput output = jdbcTemplate.queryForObject(sql, this::mapRowToProductOutput, id);
             return Optional.ofNullable(output);
-        } catch (EmptyResultDataAccessException e) {
+        } catch (Exception e) {
             return Optional.empty();
         }
     }
-    
-    public List<ProductOutput> findByEmployeeId(Long employeeId) {
-        String sql = """
-            SELECT * FROM product_outputs
-            WHERE employee_id = ? AND active = true
-            ORDER BY created_at DESC
-            """;
-        return jdbcTemplate.query(sql, productOutputMapper, employeeId);
+
+    @Override
+    public List<ProductOutput> findAll() {
+        String sql = "SELECT * FROM product_outputs";
+        return jdbcTemplate.query(sql, this::mapRowToProductOutput);
     }
-    
-    public List<ProductOutput> findByMovementType(MovementType movementType) {
-        String sql = """
-            SELECT * FROM product_outputs
-            WHERE movement_type = ? AND active = true
-            ORDER BY created_at DESC
-            """;
-        return jdbcTemplate.query(sql, productOutputMapper, movementType.name());
-    }
-    
-    public ProductOutput save(ProductOutput output) {
-        if (output.getId() == null) {
-            return insert(output);
-        }
-        return update(output);
-    }
-    
-    private ProductOutput insert(ProductOutput output) {
-        String sql = """
-            INSERT INTO product_outputs (
-                employee_id, movement_type, description,
-                active, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?)
-            """;
-            
-        KeyHolder keyHolder = new GeneratedKeyHolder();
-        
-        jdbcTemplate.update(connection -> {
-            PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-            ps.setLong(1, output.getEmployeeId());
-            ps.setString(2, output.getMovementType().toString());
-            ps.setString(3, output.getDescription());
-            ps.setBoolean(4, output.isActive());
-            ps.setTimestamp(5, Timestamp.valueOf(output.getCreatedAt()));
-            ps.setTimestamp(6, Timestamp.valueOf(output.getUpdatedAt()));
-            return ps;
-        }, keyHolder);
-        
-        Number key = keyHolder.getKey();
-        if (key != null) {
-            output.setId(key.longValue());
-        }
-        return output;
-    }
-    
-    private ProductOutput update(ProductOutput output) {
-        String sql = """
-            UPDATE product_outputs SET
-                employee_id = ?, movement_type = ?,
-                description = ?, active = ?,
-                updated_at = ?
-            WHERE id = ?
-            """;
-            
-        jdbcTemplate.update(sql,
-            output.getEmployeeId(),
-            output.getMovementType().name(),
-            output.getDescription(),
-            output.isActive(),
-            Timestamp.valueOf(output.getUpdatedAt()),
-            output.getId()
-        );
-        
-        return output;
-    }
-    
-    public void delete(Long id) {
-        String sql = """
-            UPDATE product_outputs SET
-                active = false,
-                updated_at = CURRENT_TIMESTAMP
-            WHERE id = ?
-            """;
+
+    @Override
+    public void deleteById(Long id) {
+        String sql = "DELETE FROM product_outputs WHERE id = ?";
         jdbcTemplate.update(sql, id);
     }
-    
+
+    @Override
     public boolean existsById(Long id) {
-        String sql = """
-            SELECT COUNT(*) FROM product_outputs
-            WHERE id = ? AND active = true
-            """;
-        return Boolean.TRUE.equals(jdbcTemplate.queryForObject(sql, Boolean.class, id));
+        String sql = "SELECT COUNT(*) FROM product_outputs WHERE id = ?";
+        Integer count = jdbcTemplate.queryForObject(sql, Integer.class, id);
+        return count != null && count > 0;
+    }
+
+    @Override
+    public long count() {
+        String sql = "SELECT COUNT(*) FROM product_outputs";
+        Long count = jdbcTemplate.queryForObject(sql, Long.class);
+        return count != null ? count : 0;
+    }
+
+    private ProductOutput mapRowToProductOutput(ResultSet rs, int rowNum) throws SQLException {
+        ProductOutput output = new ProductOutput();
+        output.setId(rs.getLong("id"));
+        output.setEmployeeId(rs.getLong("employee_id"));
+        output.setOrderId(rs.getLong("order_id"));
+        output.setMovementType(MovementType.valueOf(rs.getString("movement_type")));
+        output.setDescription(rs.getString("description"));
+        output.setTotalAmount(rs.getBigDecimal("total_amount"));
+        output.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
+        output.setUpdatedAt(rs.getTimestamp("updated_at").toLocalDateTime());
+        return output;
+    }
+
+    public List<ProductOutput> findByEmployeeId(Long employeeId) {
+        String sql = "SELECT * FROM product_outputs WHERE employee_id = ?";
+        return jdbcTemplate.query(sql, this::mapRowToProductOutput, employeeId);
+    }
+
+    public List<ProductOutput> findByOrderId(Long orderId) {
+        String sql = "SELECT * FROM product_outputs WHERE order_id = ?";
+        return jdbcTemplate.query(sql, this::mapRowToProductOutput, orderId);
+    }
+
+    public List<ProductOutput> findByMovementType(MovementType movementType) {
+        String sql = "SELECT * FROM product_outputs WHERE movement_type = ?";
+        return jdbcTemplate.query(sql, this::mapRowToProductOutput, movementType.name());
     }
 }

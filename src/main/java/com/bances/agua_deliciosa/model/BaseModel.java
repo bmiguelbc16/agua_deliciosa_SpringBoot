@@ -1,11 +1,19 @@
 package com.bances.agua_deliciosa.model;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
-public abstract class BaseModel {
+public abstract class BaseModel implements Serializable {
+    private static final long serialVersionUID = 1L;
+    
     private Long id;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    public BaseModel() {
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+    }
 
     public Long getId() {
         return id;

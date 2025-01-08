@@ -1,28 +1,45 @@
 package com.bances.agua_deliciosa.model;
 
-public class StoreOrder extends Order {
-    
-    private Employee sellerEmployee;
-    private Employee deliveryEmployee;
-    
+public class StoreOrder extends BaseModel {
+    private Long sellerEmployeeId;
+    private Long deliveryEmployeeId;
+
     public StoreOrder() {
-        setOrderableType("App\\Models\\StoreOrder");
-        initializeOrderable();
+        super();
     }
-    
-    public Employee getSellerEmployee() {
-        return sellerEmployee;
+
+    public Long getSellerEmployeeId() {
+        return sellerEmployeeId;
     }
-    
-    public void setSellerEmployee(Employee sellerEmployee) {
-        this.sellerEmployee = sellerEmployee;
+
+    public void setSellerEmployeeId(Long sellerEmployeeId) {
+        this.sellerEmployeeId = sellerEmployeeId;
     }
-    
-    public Employee getDeliveryEmployee() {
-        return deliveryEmployee;
+
+    public Long getDeliveryEmployeeId() {
+        return deliveryEmployeeId;
     }
-    
-    public void setDeliveryEmployee(Employee deliveryEmployee) {
-        this.deliveryEmployee = deliveryEmployee;
+
+    public void setDeliveryEmployeeId(Long deliveryEmployeeId) {
+        this.deliveryEmployeeId = deliveryEmployeeId;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof StoreOrder)) return false;
+        StoreOrder that = (StoreOrder) o;
+        return getId() != null && getId().equals(that.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return getId() != null ? getId().hashCode() : 0;
+    }
+
+    @Override
+    public String toString() {
+        return "StoreOrder [id=" + getId() + ", sellerEmployeeId=" + sellerEmployeeId + 
+               ", deliveryEmployeeId=" + deliveryEmployeeId + "]";
     }
 }

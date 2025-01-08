@@ -1,76 +1,79 @@
 package com.bances.agua_deliciosa.security.token;
 
-import java.time.LocalDateTime;
-import java.util.UUID;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import com.bances.agua_deliciosa.model.User;
 import com.bances.agua_deliciosa.model.UserToken;
 import com.bances.agua_deliciosa.repository.UserTokenRepository;
-import com.bances.agua_deliciosa.service.system.TokenService;
+import com.bances.agua_deliciosa.service.core.UserService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.Optional;
+import java.util.UUID;
 
 @Service
+@RequiredArgsConstructor
 public class DefaultTokenService implements TokenService {
-
     private static final int TOKEN_EXPIRATION_DAYS = 7;
 
-    @Autowired
-    private UserTokenRepository userTokenRepository;
+    private final UserTokenRepository userTokenRepository;
+    private final UserService userService;
 
     @Override
     @Transactional
     public String generateVerificationToken(User user) {
-        LocalDateTime now = LocalDateTime.now();
-        UserToken userToken = createToken(user, now);
-        userToken.setUserId(user.getId());
-        return userToken.getToken();
+        return generateTokenForUser(user);
     }
 
     @Override
     @Transactional
     public String generatePasswordResetToken(User user) {
+        return generateTokenForUser(user);
+    }
+
+    private String generateTokenForUser(User user) {
+        String token = UUID.randomUUID().toString();
         LocalDateTime now = LocalDateTime.now();
-        UserToken userToken = createToken(user, now);
+
+        UserToken userToken = new UserToken();
         userToken.setUserId(user.getId());
-        return userToken.getToken();
+        userToken.setToken(token);
+        userToken.setCreatedAt(now);
+        userToken.setExpiresAt(now.plusDays(TOKEN_EXPIRATION_DAYS));
+        userToken.setUpdatedAt(now);
+
+        userTokenRepository.save(userToken);
+
+        return token;
     }
 
     @Override
     @Transactional(readOnly = true)
     public boolean validateVerificationToken(String email, String token) {
-        return userTokenRepository.findByUserEmailAndTokenAndExpiresAtAfter(email, token, LocalDateTime.now())
-                .isPresent();
+        Optional<User> user = userService.findByEmail(email);
+        if (user.isEmpty()) {
+            return false;
+        }
+
+        Optional<UserToken> userToken = userTokenRepository.findByToken(token);
+        if (userToken.isEmpty()) {
+            return false;
+        }
+
+        return userToken.get().getUserId().equals(user.get().getId()) &&
+               userToken.get().getExpiresAt().isAfter(LocalDateTime.now());
     }
 
     @Override
     @Transactional(readOnly = true)
     public boolean validateResetToken(String email, String token) {
-        return userTokenRepository.findByUserEmailAndTokenAndExpiresAtAfter(email, token, LocalDateTime.now())
-                .isPresent();
+        return validateVerificationToken(email, token);
     }
 
+    @Override
     @Transactional
-    @Scheduled(cron = "0 0 * * * *") // Ejecutar cada hora
     public void deleteExpiredTokens() {
-        userTokenRepository.deleteByExpiresAtBefore(LocalDateTime.now());
-    }
-
-    private String generateToken() {
-        return UUID.randomUUID().toString();
-    }
-
-    private UserToken createToken(User user, LocalDateTime now) {
-        UserToken token = new UserToken();
-        token.setUserId(user.getId());
-        token.setToken(generateToken());
-        token.setExpiresAt(now.plusDays(TOKEN_EXPIRATION_DAYS));
-        token.setActive(true);
-        token.setCreatedAt(now);
-        token.setUpdatedAt(now);
-        return userTokenRepository.save(token);
+        userTokenRepository.deleteExpiredTokens();
     }
 }

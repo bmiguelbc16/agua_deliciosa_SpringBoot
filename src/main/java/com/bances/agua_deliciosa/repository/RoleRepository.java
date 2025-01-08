@@ -1,157 +1,134 @@
 package com.bances.agua_deliciosa.repository;
 
+import com.bances.agua_deliciosa.model.Role;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
-import org.springframework.jdbc.support.GeneratedKeyHolder;
-import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
-import org.springframework.dao.EmptyResultDataAccessException;
-import com.bances.agua_deliciosa.model.Role;
-import java.sql.PreparedStatement;
-import java.sql.Statement;
-import java.sql.Timestamp;
+
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Repository
 public class RoleRepository {
-    
     private final JdbcTemplate jdbcTemplate;
-    
     private final RowMapper<Role> roleMapper = (rs, rowNum) -> {
         Role role = new Role();
         role.setId(rs.getLong("id"));
         role.setName(rs.getString("name"));
         role.setDescription(rs.getString("description"));
-        role.setActive(rs.getBoolean("active"));
+        role.setGuardName(rs.getString("guard_name"));
         role.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
         role.setUpdatedAt(rs.getTimestamp("updated_at").toLocalDateTime());
         return role;
     };
-    
+
     public RoleRepository(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
-    
+
     public List<Role> findAll() {
-        String sql = """
-            SELECT * FROM roles
-            WHERE active = true
-            ORDER BY name
-            """;
+        String sql = "SELECT * FROM roles";
         return jdbcTemplate.query(sql, roleMapper);
     }
-    
+
     public Optional<Role> findById(Long id) {
-        String sql = """
-            SELECT * FROM roles
-            WHERE id = ? AND active = true
-            """;
-        try {
-            Role role = jdbcTemplate.queryForObject(sql, roleMapper, id);
-            return Optional.ofNullable(role);
-        } catch (EmptyResultDataAccessException e) {
-            return Optional.empty();
-        }
+        String sql = "SELECT * FROM roles WHERE id = ?";
+        List<Role> roles = jdbcTemplate.query(sql, roleMapper, id);
+        return roles.isEmpty() ? Optional.empty() : Optional.of(roles.get(0));
     }
-    
+
     public Optional<Role> findByName(String name) {
-        String sql = """
-            SELECT * FROM roles
-            WHERE name = ? AND active = true
-            """;
-        try {
-            Role role = jdbcTemplate.queryForObject(sql, roleMapper, name);
-            return Optional.ofNullable(role);
-        } catch (EmptyResultDataAccessException e) {
-            return Optional.empty();
-        }
+        String sql = "SELECT * FROM roles WHERE name = ?";
+        List<Role> roles = jdbcTemplate.query(sql, roleMapper, name);
+        return roles.isEmpty() ? Optional.empty() : Optional.of(roles.get(0));
     }
-    
+
     public Role save(Role role) {
         if (role.getId() == null) {
-            return insert(role);
-        }
-        return update(role);
-    }
-    
-    private Role insert(Role role) {
-        String sql = """
-            INSERT INTO roles (
-                name, description, active,
-                created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?)
-            """;
+            // Para nuevos roles, primero obtenemos el siguiente ID
+            Long nextId = jdbcTemplate.queryForObject(
+                "SELECT COALESCE(MAX(id), 0) + 1 FROM roles", Long.class);
+            role.setId(nextId);
             
-        KeyHolder keyHolder = new GeneratedKeyHolder();
-        
-        jdbcTemplate.update(connection -> {
-            PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-            ps.setString(1, role.getName());
-            ps.setString(2, role.getDescription());
-            ps.setBoolean(3, role.isActive());
-            ps.setTimestamp(4, Timestamp.valueOf(role.getCreatedAt()));
-            ps.setTimestamp(5, Timestamp.valueOf(role.getUpdatedAt()));
-            return ps;
-        }, keyHolder);
-        
-        Number key = keyHolder.getKey();
-        if (key != null) {
-            role.setId(key.longValue());
+            String sql = "INSERT INTO roles (id, name, description, guard_name, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)";
+            jdbcTemplate.update(sql, 
+                role.getId(),
+                role.getName(), 
+                role.getDescription(), 
+                role.getGuardName(),
+                role.getCreatedAt(),
+                role.getUpdatedAt());
+        } else {
+            String sql = "UPDATE roles SET name = ?, description = ?, guard_name = ?, updated_at = ? WHERE id = ?";
+            jdbcTemplate.update(sql, 
+                role.getName(), 
+                role.getDescription(), 
+                role.getGuardName(),
+                role.getUpdatedAt(),
+                role.getId());
         }
         return role;
     }
-    
-    private Role update(Role role) {
-        String sql = """
-            UPDATE roles SET
-                name = ?, description = ?,
-                active = ?, updated_at = ?
-            WHERE id = ?
-            """;
-            
-        jdbcTemplate.update(sql,
-            role.getName(),
-            role.getDescription(),
-            role.isActive(),
-            Timestamp.valueOf(role.getUpdatedAt()),
-            role.getId()
-        );
-        
-        return role;
+
+    public void saveAll(List<Role> roles) {
+        roles.forEach(this::save);
     }
-    
-    public void delete(Long id) {
-        String sql = """
-            UPDATE roles SET
-                active = false,
-                updated_at = CURRENT_TIMESTAMP
-            WHERE id = ?
-            """;
-        jdbcTemplate.update(sql, id);
+
+    public long count() {
+        Long count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM roles", Long.class);
+        return count != null ? count : 0L;
     }
-    
-    public boolean existsById(Long id) {
-        String sql = """
-            SELECT COUNT(*) FROM roles
-            WHERE id = ? AND active = true
-            """;
-        Integer count = jdbcTemplate.queryForObject(sql, Integer.class, id);
-        return count != null && count > 0;
+
+    public void addPermissions(Long roleId, Set<Long> permissionIds) {
+        String sql = "INSERT INTO role_has_permissions (role_id, permission_id) VALUES (?, ?)";
+        permissionIds.forEach(permissionId -> 
+            jdbcTemplate.update(sql, roleId, permissionId));
     }
-    
-    public boolean existsByName(String name) {
-        String sql = """
-            SELECT COUNT(*) FROM roles
-            WHERE name = ? AND active = true
-            """;
-        Integer count = jdbcTemplate.queryForObject(sql, Integer.class, name);
-        return count != null && count > 0;
+
+    public void clearPermissions(Long roleId) {
+        String sql = "DELETE FROM role_has_permissions WHERE role_id = ?";
+        jdbcTemplate.update(sql, roleId);
     }
-    
-    public int countByPermissionId(Long permissionId) {
-        String sql = "SELECT COUNT(*) FROM role_permissions WHERE permission_id = ?";
-        Integer count = jdbcTemplate.queryForObject(sql, Integer.class, permissionId);
-        return count != null ? count : 0;
+
+    public void deleteById(Long id) {
+        if (id != null) {
+            String sql = "DELETE FROM roles WHERE id = ?";
+            jdbcTemplate.update(sql, id);
+        }
+    }
+
+    public void assignPermissionToRole(Long roleId, Long permissionId) {
+        String sql = "INSERT INTO role_has_permissions (role_id, permission_id) VALUES (?, ?)";
+        jdbcTemplate.update(sql, roleId, permissionId);
+    }
+
+    public void removePermissionFromRole(Long roleId, Long permissionId) {
+        String sql = "DELETE FROM role_has_permissions WHERE role_id = ? AND permission_id = ?";
+        jdbcTemplate.update(sql, roleId, permissionId);
+    }
+
+    public List<Role> findByUserId(Long userId) {
+        String sql = """
+            SELECT r.* FROM roles r 
+            INNER JOIN model_has_roles mhr ON r.id = mhr.role_id 
+            WHERE mhr.model_id = ? AND mhr.model_type = 'User'
+        """;
+        return jdbcTemplate.query(sql, roleMapper, userId);
+    }
+
+    public List<Role> findByIds(List<Long> ids) {
+        String sql = "SELECT * FROM roles WHERE id IN (" + String.join(",", ids.stream().map(String::valueOf).toArray(String[]::new)) + ")";
+        return jdbcTemplate.query(sql, roleMapper);
+    }
+
+    public List<String> findRoleNamesByUserId(Long userId) {
+        String sql = """
+            SELECT r.name 
+            FROM roles r 
+            INNER JOIN model_has_roles mhr ON r.id = mhr.role_id 
+            WHERE mhr.model_id = ? AND mhr.model_type = 'User'
+        """;
+        return jdbcTemplate.queryForList(sql, String.class, userId);
     }
 }

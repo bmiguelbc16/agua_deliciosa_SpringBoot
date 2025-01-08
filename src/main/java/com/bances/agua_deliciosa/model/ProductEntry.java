@@ -1,94 +1,67 @@
 package com.bances.agua_deliciosa.model;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
 
 public class ProductEntry extends BaseModel {
     private Long employeeId;
-    private Employee employee;
     private MovementType movementType;
     private String description;
-    private List<ProductEntryDetail> details = new ArrayList<>();
-    private boolean active;
-    
-    // Getters
+    private BigDecimal totalAmount;
+
+    public ProductEntry() {
+        super();
+        this.totalAmount = BigDecimal.ZERO;
+    }
+
     public Long getEmployeeId() {
         return employeeId;
     }
-    
-    public Employee getEmployee() {
-        return employee;
+
+    public void setEmployeeId(Long employeeId) {
+        this.employeeId = employeeId;
     }
-    
+
     public MovementType getMovementType() {
         return movementType;
     }
-    
-    public String getDescription() {
-        return description;
-    }
-    
-    public List<ProductEntryDetail> getDetails() {
-        return new ArrayList<>(details);
-    }
-    
-    public boolean isActive() {
-        return active;
-    }
-    
-    // Setters
-    public void setEmployeeId(long employeeId) {
-        this.employeeId = employeeId;
-    }
-    
-    public void setEmployee(Employee employee) {
-        this.employee = employee;
-    }
-    
+
     public void setMovementType(MovementType movementType) {
         this.movementType = movementType;
     }
-    
+
+    public String getDescription() {
+        return description;
+    }
+
     public void setDescription(String description) {
         this.description = description;
     }
-    
-    public void setActive(boolean active) {
-        this.active = active;
+
+    public BigDecimal getTotalAmount() {
+        return totalAmount;
     }
-    
-    public void setDetails(List<ProductEntryDetail> details) {
-        this.details = details != null ? new ArrayList<>(details) : new ArrayList<>();
+
+    public void setTotalAmount(BigDecimal totalAmount) {
+        this.totalAmount = totalAmount;
     }
-    
-    // Métodos de utilidad
-    public void addDetail(ProductEntryDetail detail) {
-        if (detail != null) {
-            details.add(detail);
-            detail.setEntry(this);
-        }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof ProductEntry)) return false;
+        ProductEntry that = (ProductEntry) o;
+        return getId() != null && getId().equals(that.getId());
     }
-    
-    public void removeDetail(ProductEntryDetail detail) {
-        if (detail != null && details.contains(detail)) {
-            details.remove(detail);
-            if (detail.getEntry() == this) {
-                detail.setEntry(null);
-            }
-        }
+
+    @Override
+    public int hashCode() {
+        return getId() != null ? getId().hashCode() : 0;
     }
-    
-    public BigDecimal getTotal() {
-        return details.stream()
-                .map(ProductEntryDetail::getSubtotal)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-    }
-    
+
     @Override
     public String toString() {
         return "ProductEntry [id=" + getId() + ", employeeId=" + employeeId + 
                ", movementType=" + movementType + ", description=" + description + 
-               ", active=" + active + ", details=" + details.size() + "]";
+               ", totalAmount=" + totalAmount + "]";
     }
 }

@@ -3,19 +3,20 @@ package com.bances.agua_deliciosa.model;
 import java.time.LocalDateTime;
 
 public class UserToken extends BaseModel {
-    private User user;
+    private Long userId;
     private String token;
     private LocalDateTime expiresAt;
 
-    public User getUser() {
-        return user;
+    public UserToken() {
+        super();
     }
 
-    public void setUser(User user) {
-        this.user = user;
-        if (user != null && !user.getTokens().contains(this)) {
-            user.addToken(this);
-        }
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
     }
 
     public String getToken() {
@@ -34,11 +35,22 @@ public class UserToken extends BaseModel {
         this.expiresAt = expiresAt;
     }
 
-    public boolean isExpired() {
-        return expiresAt != null && LocalDateTime.now().isAfter(expiresAt);
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof UserToken)) return false;
+        UserToken that = (UserToken) o;
+        return token != null && token.equals(that.token);
     }
 
-    public boolean isValid() {
-        return !isExpired();
+    @Override
+    public int hashCode() {
+        return token != null ? token.hashCode() : 0;
+    }
+
+    @Override
+    public String toString() {
+        return "UserToken [id=" + getId() + ", userId=" + userId + 
+               ", token=" + token + ", expiresAt=" + expiresAt + "]";
     }
 }

@@ -55,20 +55,24 @@ public class EmailService {
         sendEmail(email, subject, text);
     }
 
-    public void sendPasswordResetEmail(String email, String resetLink) {
+    public void sendPasswordResetEmail(String email, String token) {
         String subject = "Restablecer contraseña - Agua Deliciosa";
         String text = String.format("""
             Hola,
             
-            Has solicitado restablecer tu contraseña. Haz clic en el siguiente enlace para crear una nueva contraseña:
+            Has solicitado restablecer tu contraseña en Agua Deliciosa.
+            
+            Para restablecer tu contraseña, utiliza el siguiente token:
             %s
+            
+            Este token expirará en 1 hora.
             
             Si no solicitaste restablecer tu contraseña, puedes ignorar este mensaje.
             
             Saludos,
             El equipo de Agua Deliciosa
-            """, resetLink);
-        
+            """, token);
+            
         sendEmail(email, subject, text);
     }
 
